@@ -40,27 +40,27 @@ fun ReportsScreen(
 
     // Financial summaries calculated directly from double-entry journal postings
     val totalSales = remember(journalEntries) {
-        journalEntries.filter { it.accountName == "Sales Account" }.sumOf { it.creditAmount }
+        journalEntries.filter { it.accountName == "Sales Account" }.sumOf { it.credit }
     }
     val totalReceipts = remember(journalEntries) {
-        journalEntries.filter { it.narration.contains("Receipt", ignoreCase = true) }.sumOf { it.debitAmount }
+        journalEntries.filter { it.narration.contains("Receipt", ignoreCase = true) }.sumOf { it.debit }
     }
     val inventoryValue = remember(products) {
         products.sumOf { it.stockQuantity * it.purchaseCost }
     }
     val cashBalance = remember(journalEntries) {
-        val cashDebits = journalEntries.filter { it.accountName == "Cash Account" }.sumOf { it.debitAmount }
-        val cashCredits = journalEntries.filter { it.accountName == "Cash Account" }.sumOf { it.creditAmount }
+        val cashDebits = journalEntries.filter { it.accountName == "Cash Account" }.sumOf { it.debit }
+        val cashCredits = journalEntries.filter { it.accountName == "Cash Account" }.sumOf { it.credit }
         cashDebits - cashCredits
     }
     val upiBalance = remember(journalEntries) {
-        val upiDebits = journalEntries.filter { it.accountName == "UPI Account" }.sumOf { it.debitAmount }
-        val upiCredits = journalEntries.filter { it.accountName == "UPI Account" }.sumOf { it.creditAmount }
+        val upiDebits = journalEntries.filter { it.accountName == "UPI Account" }.sumOf { it.debit }
+        val upiCredits = journalEntries.filter { it.accountName == "UPI Account" }.sumOf { it.credit }
         upiDebits - upiCredits
     }
     val totalReceivables = remember(journalEntries) {
-        val recvDebits = journalEntries.filter { it.accountName == "Customer Receivable" }.sumOf { it.debitAmount }
-        val recvCredits = journalEntries.filter { it.accountName == "Customer Receivable" }.sumOf { it.creditAmount }
+        val recvDebits = journalEntries.filter { it.accountName == "Customer Receivable" }.sumOf { it.debit }
+        val recvCredits = journalEntries.filter { it.accountName == "Customer Receivable" }.sumOf { it.credit }
         (recvDebits - recvCredits).coerceAtLeast(0.0)
     }
 
@@ -191,7 +191,7 @@ fun ReportsScreen(
                 }
             }
 
-            // Day Book / Journal Postings
+            // Day Book / Journal Postings Header
             item {
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
@@ -206,7 +206,7 @@ fun ReportsScreen(
                         color = OnSurfaceText
                     )
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(4.dp))
             }
 
             if (journalEntries.isEmpty()) {
@@ -239,7 +239,7 @@ fun ReportsScreen(
                     }
                 }
             } else {
-                items(journalEntries.sortedByDescending { it.createdAt }, key = { it.id }) { entry ->
+                items(journalEntries, key = { it.id }) { entry ->
                     JournalItemCard(entry = entry)
                 }
             }
@@ -275,10 +275,10 @@ private fun MetricCard(
 
 @Composable
 private fun JournalItemCard(entry: JournalEntryEntity) {
-    val dateStr = remember(entry.createdAt) {
-        SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()).format(Date(entry.createdAt))
+    val dateStr = remember(entry.date) {
+        SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()).format(Date(entry.date))
     }
-    val isDebit = entry.debitAmount > 0
+    val isDebit = entry.debit > 0
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -317,7 +317,7 @@ private fun JournalItemCard(entry: JournalEntryEntity) {
 
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = if (isDebit) "+₹${entry.debitAmount}" else "-₹${entry.creditAmount}",
+                    text = if (isDebit) "+₹${entry.debit}" else "-₹${entry.credit}",
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp,
                     color = if (isDebit) PrimaryDarkGreen else OnSurfaceText

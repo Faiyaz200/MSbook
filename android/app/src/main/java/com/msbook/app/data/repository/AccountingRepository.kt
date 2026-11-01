@@ -110,6 +110,14 @@ class AccountingRepository(
         productDao.insertProduct(product)
     }
 
+    // Journal
+    fun getJournalEntriesFlow(businessId: String): Flow<List<JournalEntryEntity>> =
+        journalDao.getJournalEntriesFlow(businessId)
+
+    suspend fun getJournalEntries(businessId: String): List<JournalEntryEntity> = withContext(Dispatchers.IO) {
+        journalDao.getJournalEntriesByBusiness(businessId)
+    }
+
     // Voucher Number Generation
     suspend fun generateNextVoucherNumber(businessId: String, voucherType: VoucherType): String =
         withContext(Dispatchers.IO) {

@@ -13,6 +13,9 @@ interface JournalDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertJournalEntries(entries: List<JournalEntryEntity>)
 
+    @Query("SELECT * FROM journal_entries WHERE businessId = :businessId ORDER BY date DESC, id DESC")
+    fun getJournalEntriesFlow(businessId: String): Flow<List<JournalEntryEntity>>
+
     @Query("SELECT * FROM journal_entries WHERE businessId = :businessId ORDER BY date ASC, id ASC")
     suspend fun getJournalEntriesByBusiness(businessId: String): List<JournalEntryEntity>
 
