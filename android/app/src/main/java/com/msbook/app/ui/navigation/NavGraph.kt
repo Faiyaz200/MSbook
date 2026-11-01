@@ -24,10 +24,12 @@ import com.msbook.app.ui.screens.business_switcher.BusinessSwitchScreen
 import com.msbook.app.ui.screens.business_switcher.BusinessSwitchViewModel
 import com.msbook.app.ui.screens.dashboard.DashboardScreen
 import com.msbook.app.ui.screens.dashboard.DashboardViewModel
+import com.msbook.app.ui.screens.inventory.InventoryScreen
 import com.msbook.app.ui.screens.ledger.CustomerLedgerScreen
 import com.msbook.app.ui.screens.placeholders.SimplePlaceholderScreen
 import com.msbook.app.ui.screens.purchase.PurchaseVoucherScreen
 import com.msbook.app.ui.screens.receipt.ReceiptVoucherScreen
+import com.msbook.app.ui.screens.reports.ReportsScreen
 import com.msbook.app.ui.screens.sales.SalesVoucherScreen
 import com.msbook.app.ui.screens.vouchers.VoucherDetailScreen
 import com.msbook.app.ui.screens.vouchers.VoucherScreen
@@ -253,25 +255,20 @@ fun MSBookNavGraph(
         }
 
         composable(route = Screen.Inventory.route) {
-            SimplePlaceholderScreen(
-                currentRoute = Screen.Inventory.route,
-                title = "Inventory & Items",
-                subtitle = "Product Catalog, Stock Batches & Categories",
-                stageDescription = "Stock registers and inventory master tables will be expanded in Step 4.",
-                icon = Icons.Outlined.Inventory2,
+            InventoryScreen(
+                businessId = activeBizId,
                 activeBusinessName = activeBizName,
+                accountingRepository = accountingRepository,
+                onNavigateBack = { navController.popBackStack() },
                 onBottomNavTabSelected = { navigateToTab(it) }
             )
         }
 
         composable(route = Screen.Reports.route) {
-            SimplePlaceholderScreen(
-                currentRoute = Screen.Reports.route,
-                title = "Financial Reports",
-                subtitle = "Day Book, Trial Balance, Profit & Loss, Balance Sheet",
-                stageDescription = "Financial statements and analytical registers will be connected in Step 5.",
-                icon = Icons.Outlined.Assessment,
+            ReportsScreen(
+                businessId = activeBizId,
                 activeBusinessName = activeBizName,
+                accountingRepository = accountingRepository,
                 onBottomNavTabSelected = { navigateToTab(it) }
             )
         }
