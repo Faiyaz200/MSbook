@@ -1,0 +1,6 @@
+{
+  "name": "MSbook",
+  "description": "MSbook — Native Android Accounting Software: Settings, Local Backup & Restore (SAF), CSV Exports, Financial Statements (P&L, Balance Sheet), Inventory & Vouchers",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
