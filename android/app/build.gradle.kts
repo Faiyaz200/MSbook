@@ -22,27 +22,24 @@ android {
 
     signingConfigs {
         create("release") {
-            val keyFile = file("${rootDir}/release.keystore")
-            if (keyFile.exists()) {
-                storeFile = keyFile
-                storePassword = "msbook123"
-                keyAlias = "msbook"
-                keyPassword = "msbook123"
-            }
+            storeFile = file("${rootDir}/release.keystore")
+            storePassword = "msbook123"
+            keyAlias = "msbook"
+            keyPassword = "msbook123"
         }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
-            val releaseSign = signingConfigs.getByName("release")
-            if (releaseSign.storeFile?.exists() == true) {
-                signingConfig = releaseSign
-            }
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+        debug {
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {

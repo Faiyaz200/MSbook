@@ -1,13 +1,12 @@
 package com.msbook.app
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.view.WindowInsetsController
 import android.webkit.*
@@ -15,13 +14,14 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.webkit.WebViewAssetLoader
+import java.io.InputStream
 
 class MainActivity : AppCompatActivity() {
 
+    private val TAG = "MSbookApp"
     private lateinit var webView: WebView
-    private lateinit var assetLoader: WebViewAssetLoader
+    private var assetLoader: WebViewAssetLoader? = null
     private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
 
     private val fileChooserLauncher = registerForActivityResult(
@@ -34,43 +34,46 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private val requestCameraPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (!isGranted) {
-            Toast.makeText(this, "Camera permission needed for barcode scanning", Toast.LENGTH_SHORT).show()
-        }
-    }
-
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Set status bar styling to MSbook Primary Dark Green
-        window.statusBarColor = Color.parseColor("#0F4D32")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            window.insetsController?.setSystemBarsAppearance(
-                0,
-                WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-            )
+        try {
+            // Safe status bar color
+            window.statusBarColor = Color.parseColor("#0F4D32")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                window.insetsController?.setSystemBarsAppearance(
+                    0,
+                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                )
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Status bar styling exception: ${e.message}")
         }
 
-        // Initialize WebViewAssetLoader for secure HTTPS origin loading of local bundled assets
-        assetLoader = WebViewAssetLoader.Builder()
-            .setDomain("appassets.androidplatform.net")
-            .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
-            .build()
+        try {
+            // Setup AndroidX WebViewAssetLoader as backup
+            assetLoader = WebViewAssetLoader.Builder()
+                .setDomain("appassets.androidplatform.net")
+                .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
+                .build()
+        } catch (e: Exception) {
+            Log.w(TAG, "WebViewAssetLoader init exception: ${e.message}")
+        }
 
-        webView = WebView(this)
-        setContentView(webView)
+        try {
+            webView = WebView(this)
+            setContentView(webView)
+            configureWebViewSettings()
+            setupClients()
+            setupBackNavigation()
 
-        configureWebViewSettings()
-        setupClients()
-        setupBackNavigation()
-        checkPermissions()
-
-        // Load complete offline bundled MSbook web application
-        webView.loadUrl("https://appassets.androidplatform.net/assets/index.html")
+            // Load MSbook application
+            webView.loadUrl("https://appassets.androidplatform.net/assets/index.html")
+        } catch (e: Exception) {
+            Log.e(TAG, "Fatal WebView launch exception", e)
+            Toast.makeText(this, "Opening MSbook: ${e.message}", Toast.LENGTH_LONG).show()
+        }
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -81,6 +84,8 @@ class MainActivity : AppCompatActivity() {
         settings.databaseEnabled = true
         settings.allowFileAccess = true
         settings.allowContentAccess = true
+        settings.allowFileAccessFromFileURLs = true
+        settings.allowUniversalAccessFromFileURLs = true
         settings.setSupportZoom(false)
         settings.builtInZoomControls = false
         settings.displayZoomControls = false
@@ -89,39 +94,131 @@ class MainActivity : AppCompatActivity() {
         settings.cacheMode = WebSettings.LOAD_DEFAULT
         settings.mediaPlaybackRequiresUserGesture = false
 
-        // User Agent
-        settings.userAgentString = "${settings.userAgentString} MSbookNativeAndroid/1.0"
+        try {
+            settings.userAgentString = "${settings.userAgentString} MSbookNative/1.0"
+        } catch (_: Exception) {}
 
-        // Hardware acceleration
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+    }
+
+    private fun handleCustomAssetRequest(url: Uri): WebResourceResponse? {
+        val host = url.host ?: ""
+        val urlStr = url.toString()
+
+        if (!host.contains("appassets.androidplatform.net") && 
+            !urlStr.contains("androidplatform.net") && 
+            !urlStr.startsWith("file:///android_asset/")) {
+            return null
+        }
+
+        var path = url.path ?: return null
+        if (path.startsWith("/assets/")) {
+            path = path.substring("/assets/".length)
+        }
+        if (path.startsWith("/")) {
+            path = path.substring(1)
+        }
+        if (path.isEmpty()) {
+            path = "index.html"
+        }
+
+        val candidates = listOf(
+            path,
+            "assets/$path",
+            path.replace("assets/assets/", "assets/")
+        )
+
+        var stream: InputStream? = null
+        for (cand in candidates) {
+            try {
+                stream = assets.open(cand)
+                break
+            } catch (_: Exception) {}
+        }
+
+        if (stream == null) {
+            return assetLoader?.shouldInterceptRequest(url)
+        }
+
+        val mimeType = when {
+            path.endsWith(".html") -> "text/html"
+            path.endsWith(".js") || path.endsWith(".mjs") -> "text/javascript"
+            path.endsWith(".css") -> "text/css"
+            path.endsWith(".png") -> "image/png"
+            path.endsWith(".jpg") || path.endsWith(".jpeg") -> "image/jpeg"
+            path.endsWith(".svg") -> "image/svg+xml"
+            path.endsWith(".json") -> "application/json"
+            path.endsWith(".woff2") -> "font/woff2"
+            path.endsWith(".woff") -> "font/woff"
+            path.endsWith(".ttf") -> "font/ttf"
+            else -> "text/plain"
+        }
+
+        val response = WebResourceResponse(mimeType, "UTF-8", stream)
+        response.responseHeaders = mapOf(
+            "Access-Control-Allow-Origin" to "*",
+            "Access-Control-Allow-Methods" to "GET, OPTIONS",
+            "Access-Control-Allow-Headers" to "*"
+        )
+        return response
     }
 
     private fun setupClients() {
         webView.webViewClient = object : WebViewClient() {
             override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
                 val url = request?.url ?: return null
-                return assetLoader.shouldInterceptRequest(url)
+                val customResp = handleCustomAssetRequest(url)
+                if (customResp != null) return customResp
+                return assetLoader?.shouldInterceptRequest(url)
+            }
+
+            @Deprecated("Deprecated in Java")
+            override fun shouldInterceptRequest(view: WebView?, url: String?): WebResourceResponse? {
+                if (url == null) return null
+                return try {
+                    val uri = Uri.parse(url)
+                    handleCustomAssetRequest(uri) ?: assetLoader?.shouldInterceptRequest(uri)
+                } catch (e: Exception) {
+                    null
+                }
+            }
+
+            override fun onReceivedError(view: WebView?, errorCode: Int, description: String?, failingUrl: String?) {
+                Log.w(TAG, "WebView error ($errorCode): $description for $failingUrl")
+                if (failingUrl?.contains("index.html") == true) {
+                    // Fallback to direct file url
+                    view?.loadUrl("file:///android_asset/index.html")
+                }
             }
 
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 val url = request?.url?.toString() ?: return false
+                return handleUrlRouting(url)
+            }
 
-                // Handle external protocols (WhatsApp ledger sharing, phone dialer, email)
+            @Deprecated("Deprecated in Java")
+            override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+                if (url == null) return false
+                return handleUrlRouting(url)
+            }
+
+            private fun handleUrlRouting(url: String): Boolean {
+                // External intents: WhatsApp sharing, dialer, mail
                 if (url.startsWith("whatsapp:") || url.startsWith("https://wa.me/") || 
                     url.startsWith("https://api.whatsapp.com/") || url.startsWith("tel:") || 
                     url.startsWith("mailto:")) {
-                    try {
+                    return try {
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
                         startActivity(intent)
-                        return true
+                        true
                     } catch (e: Exception) {
                         Toast.makeText(this@MainActivity, "App not installed for this action", Toast.LENGTH_SHORT).show()
-                        return true
+                        true
                     }
                 }
 
                 // Keep local app navigation inside the WebView
-                if (url.contains("appassets.androidplatform.net")) {
+                if (url.contains("appassets.androidplatform.net") || url.startsWith("file:///android_asset/")) {
                     return false
                 }
 
@@ -135,21 +232,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         webView.webChromeClient = object : WebChromeClient() {
-            // Support camera access for barcode and QR code scanner
+            override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
+                Log.d(TAG, "[JS] ${consoleMessage?.message()} -- line ${consoleMessage?.lineNumber()}")
+                return true
+            }
+
             override fun onPermissionRequest(request: PermissionRequest?) {
                 request?.let {
-                    val requestedResources = it.resources
-                    for (res in requestedResources) {
-                        if (res == PermissionRequest.RESOURCE_VIDEO_CAPTURE) {
-                            it.grant(arrayOf(PermissionRequest.RESOURCE_VIDEO_CAPTURE))
-                            return
-                        }
-                    }
-                    it.grant(requestedResources)
+                    it.grant(it.resources)
                 }
             }
 
-            // Support file picker for backup restoration and import
             override fun onShowFileChooser(
                 webView: WebView?,
                 filePathCallback: ValueCallback<Array<Uri>>?,
@@ -163,27 +256,23 @@ class MainActivity : AppCompatActivity() {
                     addCategory(Intent.CATEGORY_OPENABLE)
                 }
 
-                try {
+                return try {
                     fileChooserLauncher.launch(intent)
+                    true
                 } catch (e: Exception) {
                     fileUploadCallback = null
-                    return false
+                    false
                 }
-                return true
             }
         }
 
-        // Support file downloads (CSV export, JSON backup, PDF ledger statements)
-        webView.setDownloadListener { url, _, contentDisposition, mimeType, _ ->
+        webView.setDownloadListener { url, _, _, mimeType, _ ->
             try {
                 val intent = Intent(Intent.ACTION_VIEW)
                 intent.setDataAndType(Uri.parse(url), mimeType)
                 startActivity(intent)
             } catch (e: Exception) {
-                // If it's a blob/data URI, trigger save via intent
-                if (url.startsWith("data:") || url.startsWith("blob:")) {
-                    Toast.makeText(this, "Downloading report...", Toast.LENGTH_SHORT).show()
-                }
+                Toast.makeText(this, "Downloading file...", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -191,18 +280,12 @@ class MainActivity : AppCompatActivity() {
     private fun setupBackNavigation() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (webView.canGoBack()) {
+                if (::webView.isInitialized && webView.canGoBack()) {
                     webView.goBack()
                 } else {
                     finish()
                 }
             }
         })
-    }
-
-    private fun checkPermissions() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            requestCameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-        }
     }
 }
