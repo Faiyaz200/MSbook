@@ -2,7 +2,6 @@ import React from 'react';
 import {
   LayoutDashboard,
   Receipt,
-  BookOpen,
   Package,
   BarChart3,
 } from 'lucide-react';
@@ -17,13 +16,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentTab, onSelectTab })
   const tabs: Array<{ key: BottomTabKey; label: string; icon: React.ElementType }> = [
     { key: 'DASHBOARD', label: 'Dashboard', icon: LayoutDashboard },
     { key: 'VOUCHERS', label: 'Vouchers', icon: Receipt },
-    { key: 'LEDGERS', label: 'Ledgers', icon: BookOpen },
     { key: 'INVENTORY', label: 'Inventory', icon: Package },
     { key: 'REPORTS', label: 'Reports', icon: BarChart3 },
   ];
 
   return (
-    <div className="h-[60px] bg-white border-t border-slate-200 flex items-center justify-around px-2 select-none shrink-0 shadow-xs z-20">
+    <div className="h-[60px] bg-white border-t border-slate-200 flex items-center justify-around px-2 select-none shrink-0 shadow-xs z-20 pb-[env(safe-area-inset-bottom)]">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isSelected = currentTab === tab.key;

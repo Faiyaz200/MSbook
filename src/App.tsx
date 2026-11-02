@@ -112,7 +112,7 @@ export default function App() {
     // If currently on one of the main tabs, replace top of stack or reset to target
     setScreenStack((prev) => {
       // Find if we are currently on a sub-screen like VoucherDetail
-      const isRootTab = ['DASHBOARD', 'VOUCHERS', 'LEDGERS', 'INVENTORY', 'REPORTS'].includes(
+      const isRootTab = ['DASHBOARD', 'VOUCHERS', 'INVENTORY', 'REPORTS'].includes(
         prev[prev.length - 1].name
       );
 
@@ -129,7 +129,7 @@ export default function App() {
     });
   };
 
-  const isMainTab = ['DASHBOARD', 'VOUCHERS', 'LEDGERS', 'INVENTORY', 'REPORTS'].includes(
+  const isMainTab = ['DASHBOARD', 'VOUCHERS', 'INVENTORY', 'REPORTS'].includes(
     currentScreen.name
   );
 
@@ -155,18 +155,18 @@ export default function App() {
   };
 
   return (
-    <div className="w-full h-screen bg-slate-950 flex flex-col font-sans overflow-hidden">
-      {/* Top AI Studio Developer Control Bar */}
-      <header className="h-14 bg-slate-900 border-b border-slate-800 px-4 sm:px-6 flex items-center justify-between shrink-0 z-30 select-none">
+    <div className="w-full h-screen bg-[#F8FAF8] flex flex-col font-sans overflow-hidden">
+      {/* Top AI Studio Developer Control Bar (Hidden on Mobile/App View) */}
+      <header className="hidden md:flex h-12 bg-slate-900 border-b border-slate-800 px-4 sm:px-6 items-center justify-between shrink-0 z-30 select-none text-white">
         <div className="flex items-center space-x-3">
-          <div className="w-7 h-7 rounded-lg bg-[#0F4D32] text-white font-black text-sm flex items-center justify-center shadow-xs">
+          <div className="w-6 h-6 rounded-lg bg-[#0F4D32] text-white font-black text-xs flex items-center justify-center shadow-xs">
             MS
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <span className="font-bold text-white text-sm tracking-tight">MSbook</span>
-              <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">
-                Step 6 • Audit, Bug Fixes & Release APK
+              <span className="font-bold text-white text-xs tracking-tight">MSbook</span>
+              <span className="text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">
+                Kirana Suite
               </span>
             </div>
           </div>
@@ -177,67 +177,28 @@ export default function App() {
           {/* Settings Shortcut Button */}
           <button
             onClick={() => navigateTo({ name: 'SETTINGS' })}
-            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center space-x-1.5 transition-colors border border-slate-700 shadow-xs"
+            className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center space-x-1.5 transition-colors border border-slate-700 shadow-xs"
             title="Open Settings, Backup & Restore"
           >
-            <Settings className="w-4 h-4 text-emerald-400" />
-            <span className="hidden sm:inline">Settings & Backup</span>
+            <Settings className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="hidden sm:inline">Settings</span>
           </button>
 
-          {/* View Android Source Code Button */}
-          <button
-            onClick={() => setIsCodeModalOpen(true)}
-            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center space-x-1.5 transition-colors border border-slate-700 shadow-xs"
-            title="Inspect Kotlin & Gradle Project Files"
-          >
-            <Code2 className="w-4 h-4 text-emerald-400" />
-            <span className="hidden sm:inline">Android Source Code</span>
-          </button>
-
-          {/* Test Suite Button */}
-          <button
-            onClick={() => setIsTestModalOpen(true)}
-            className="px-3 py-1.5 rounded-xl bg-emerald-900/40 hover:bg-emerald-900/70 text-emerald-300 text-xs font-semibold flex items-center space-x-1.5 transition-colors border border-emerald-700/60 shadow-xs"
-            title="Run Step 5 Settings, Backup & Restore Verification Tests"
-          >
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span className="hidden sm:inline">Step 5 Test Suite</span>
-          </button>
-
-          {/* Cold Restart App Simulator Button */}
-          <button
-            onClick={handleColdRestart}
-            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center space-x-1.5 transition-colors border border-slate-700"
-            title="Simulate Android App Process Kill & Cold Restart"
-          >
-            <RotateCcw className="w-3.5 h-3.5 text-blue-400" />
-            <span className="hidden md:inline">Cold Restart</span>
-          </button>
-
-          {/* Device Frame Toggle */}
-          <button
-            onClick={() => setIsFramed(!isFramed)}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors border border-slate-700"
-            title={isFramed ? 'Switch to Full Viewport' : 'Switch to Android Phone Bezel'}
-          >
-            {isFramed ? <Maximize2 className="w-4 h-4" /> : <Smartphone className="w-4 h-4" />}
-          </button>
-
-          {/* Factory Reset */}
+          {/* Reset DB */}
           <button
             onClick={handleClearData}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-red-950/60 text-slate-400 hover:text-red-300 transition-colors border border-slate-700"
+            className="p-1.5 rounded-xl bg-slate-800 hover:bg-red-950/60 text-slate-400 hover:text-red-300 transition-colors border border-slate-700"
             title="Reset DB to Fresh First Launch"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
       </header>
 
-      {/* Main Workspace with Android Device Emulation */}
-      <main className="flex-1 overflow-auto bg-slate-950 p-2 sm:p-4 flex items-center justify-center relative">
+      {/* Main Workspace: Direct full screen without mock phone frames */}
+      <main className="flex-1 overflow-hidden bg-[#F8FAF8] flex flex-col relative w-full h-full">
         <AndroidFrame
-          isFramed={isFramed}
+          isFramed={false}
           onSystemBackPressed={handleSystemBack}
           canGoBack={screenStack.length > 1}
         >
@@ -287,8 +248,8 @@ export default function App() {
                     onNavigateToPayment={() => {
                       navigateTo({ name: 'PAYMENT_VOUCHER' });
                     }}
-                    onNavigateToLedgers={() => {
-                      navigateTo({ name: 'LEDGERS' });
+                    onNavigateToInventory={() => {
+                      handleSelectBottomTab('INVENTORY');
                     }}
                     onNavigateToSettings={() => {
                       navigateTo({ name: 'SETTINGS' });

@@ -355,7 +355,7 @@ export interface BusinessFinancialSummary {
   stockValue: number;
 }
 
-export type BottomTabKey = 'DASHBOARD' | 'VOUCHERS' | 'LEDGERS' | 'INVENTORY' | 'REPORTS';
+export type BottomTabKey = 'DASHBOARD' | 'VOUCHERS' | 'INVENTORY' | 'REPORTS';
 
 export type ReportType =
   | 'PROFIT_LOSS'

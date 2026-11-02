@@ -230,12 +230,15 @@ export const PurchaseVoucherScreen: React.FC<PurchaseVoucherScreenProps> = ({
             </div>
             <div>
               <label className="text-[10px] text-slate-500 font-semibold mb-0.5 block">Unit</label>
-              <input
-                type="text"
+              <select
                 value={unit}
                 onChange={(e) => setUnit(e.target.value)}
-                className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-[#0F4D32]"
-              />
+                className="w-full px-2 py-1.5 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-[#0F4D32] font-semibold"
+              >
+                <option value="pcs">pcs</option>
+                <option value="kg">kg</option>
+                <option value="ltr">ltr</option>
+              </select>
             </div>
             <div>
               <label className="text-[10px] text-slate-500 font-semibold mb-0.5 block">Cost Price (₹)</label>

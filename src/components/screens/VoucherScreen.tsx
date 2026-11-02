@@ -62,13 +62,13 @@ export const VoucherScreen: React.FC<VoucherScreenProps> = ({
             Main Vouchers
           </h2>
           <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-[#E8F5E9] text-[#0F4D32]">
-            5 Core Types
+            4 Core Types
           </span>
         </div>
 
         {/* 1. 2-COLUMN GRID FOR 4 MAIN VOUCHERS */}
         <div className="grid grid-cols-2 gap-3">
-          {/* 1. Sales Voucher */}
+          {/* 1. Sale Item */}
           <div
             onClick={() => onNavigateToVoucher('SALES')}
             role="button"
@@ -84,10 +84,10 @@ export const VoucherScreen: React.FC<VoucherScreenProps> = ({
 
             <div className="mt-3">
               <h3 className="font-bold text-slate-900 text-sm leading-tight">
-                Sales Voucher
+                Sale Item
               </h3>
               <p className="text-[11px] text-slate-500 mt-1 leading-snug">
-                Create Sales Bill
+                Create Sale Bill
               </p>
             </div>
           </div>
@@ -163,32 +163,6 @@ export const VoucherScreen: React.FC<VoucherScreenProps> = ({
               </p>
             </div>
           </div>
-        </div>
-
-        {/* 5. Split Payment Option */}
-        <div
-          onClick={() => onNavigateToVoucher('SPLIT_PAYMENT')}
-          role="button"
-          tabIndex={0}
-          className="p-3.5 rounded-2xl bg-white border-2 border-[#0F4D32] hover:bg-[#F2F8F4] active:scale-[0.99] transition-all cursor-pointer flex items-center justify-between shadow-xs group"
-        >
-          <div className="flex items-center space-x-3.5">
-            <div className="w-11 h-11 rounded-full bg-[#F2F8F4] flex items-center justify-center text-slate-900 border border-[#0F4D32]/10">
-              <Split className="w-5 h-5 text-black stroke-[1.8px]" />
-            </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <h3 className="font-bold text-slate-900 text-sm">Split Payment</h3>
-                <span className="px-1.5 py-0.5 rounded bg-[#0F4D32] text-white text-[9px] font-bold">
-                  MULTI-MODE
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                Allocate bill across Cash, UPI, Bank & Udhar
-              </p>
-            </div>
-          </div>
-          <ChevronRight className="w-4 h-4 text-[#0F4D32] group-hover:translate-x-0.5 transition-transform" />
         </div>
 
         {/* 2. EXPANDABLE SECTION: MORE VOUCHERS */}

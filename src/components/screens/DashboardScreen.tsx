@@ -31,7 +31,7 @@ interface DashboardScreenProps {
   onNavigateToPurchase?: () => void;
   onNavigateToReceipt?: () => void;
   onNavigateToPayment?: () => void;
-  onNavigateToLedgers?: () => void;
+  onNavigateToInventory?: () => void;
   onNavigateToSettings?: () => void;
 }
 
@@ -43,7 +43,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   onNavigateToPurchase,
   onNavigateToReceipt,
   onNavigateToPayment,
-  onNavigateToLedgers,
+  onNavigateToInventory,
   onNavigateToSettings,
 }) => {
   const isClothing = activeBusiness.businessType === 'CLOTHING';
@@ -302,7 +302,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 <Receipt className="w-4 h-4 text-black stroke-[1.8px]" />
               </div>
               <span className="text-[11px] font-bold text-slate-800 text-center leading-tight">
-                Sale Bill
+                Sale Item
               </span>
             </button>
 
@@ -331,14 +331,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </button>
 
             <button
-              onClick={onNavigateToLedgers}
+              onClick={onNavigateToInventory}
               className="flex flex-col items-center justify-center p-3 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 active:scale-[0.97] transition-all shadow-xs"
             >
               <div className="w-9 h-9 rounded-full bg-[#F2F8F4] flex items-center justify-center text-slate-900 mb-1 border border-[#0F4D32]/10">
-                <BookOpen className="w-4 h-4 text-black stroke-[1.8px]" />
+                <Package className="w-4 h-4 text-black stroke-[1.8px]" />
               </div>
               <span className="text-[11px] font-bold text-slate-800 text-center leading-tight">
-                Ledgers
+                Inventory
               </span>
             </button>
           </div>
