@@ -89,53 +89,7 @@ export const BusinessSelectScreen: React.FC<BusinessSelectScreenProps> = ({
               </div>
             </div>
             <div className="ml-3 shrink-0">
-              {selectedType === 'KIRANA' ? (
-                <CheckCircle2 className="w-6 h-6 text-[#0F4D32]" />
-              ) : (
-                <Circle className="w-6 h-6 text-slate-300" />
-              )}
-            </div>
-          </div>
-
-          {/* 2. Clothing / Men's Wear */}
-          <div
-            onClick={() => setSelectedType('CLOTHING')}
-            role="button"
-            tabIndex={0}
-            className={`w-full p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between text-left ${
-              selectedType === 'CLOTHING'
-                ? 'border-[#0F4D32] bg-[#F2F8F4] shadow-sm ring-1 ring-[#0F4D32]/20'
-                : 'border-slate-200 bg-white hover:border-slate-300 shadow-xs'
-            }`}
-          >
-            <div className="flex items-center space-x-4">
-              <div
-                className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${
-                  selectedType === 'CLOTHING'
-                    ? 'bg-[#0F4D32] text-white shadow-sm'
-                    : 'bg-[#F2F8F4] text-[#0F4D32]'
-                }`}
-              >
-                <Shirt className="w-7 h-7" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-slate-900 text-base leading-snug">
-                  {BUSINESS_TYPES.CLOTHING.title}
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
-                  {BUSINESS_TYPES.CLOTHING.description}
-                </p>
-                <span className="inline-block mt-1 text-[11px] font-medium text-[#0F4D32]">
-                  {BUSINESS_TYPES.CLOTHING.badge}
-                </span>
-              </div>
-            </div>
-            <div className="ml-3 shrink-0">
-              {selectedType === 'CLOTHING' ? (
-                <CheckCircle2 className="w-6 h-6 text-[#0F4D32]" />
-              ) : (
-                <Circle className="w-6 h-6 text-slate-300" />
-              )}
+              <CheckCircle2 className="w-6 h-6 text-[#0F4D32]" />
             </div>
           </div>
         </div>

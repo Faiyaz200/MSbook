@@ -7,20 +7,28 @@ export interface BusinessTypeMeta {
   badge: string;
 }
 
-export const BUSINESS_TYPES: Record<BusinessType, BusinessTypeMeta> = {
+export const BUSINESS_TYPES: Record<string, BusinessTypeMeta> = {
   KIRANA: {
     type: 'KIRANA',
     title: 'Kirana / General Store',
     description: 'Provisions, grocery, FMCG & daily essentials store',
     badge: 'Provisions & FMCG',
   },
-  CLOTHING: {
-    type: 'CLOTHING',
-    title: "Clothing / Men's Wear",
-    description: 'Apparel, menswear, garments & fabric retail',
-    badge: 'Apparel & Garments',
-  },
 };
+
+export interface DeletedStockItem {
+  id: string;
+  businessId: string;
+  originalProductId: string;
+  name: string;
+  deletedAt: number; // timestamp
+  stockQuantity: number;
+  unit: string;
+  purchaseCost: number;
+  sellingPrice: number;
+  totalValuation: number;
+  reason?: string;
+}
 
 export interface Business {
   id: string;

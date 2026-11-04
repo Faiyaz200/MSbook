@@ -773,31 +773,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   Business Category
                 </label>
                 <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setProfileType('KIRANA')}
-                    className={`p-3 rounded-xl border text-left transition-all ${
-                      profileType === 'KIRANA'
-                        ? 'border-[#0F4D32] bg-[#F2F8F4] text-[#0F4D32]'
-                        : 'border-slate-200 bg-white text-slate-700'
-                    }`}
+                  <div
+                    className="p-3 rounded-xl border border-[#0F4D32] bg-[#F2F8F4] text-[#0F4D32] text-left"
                   >
-                    <div className="font-bold text-xs">Kirana / FMCG</div>
-                    <div className="text-[10px] text-slate-500">Grocery & Provisions</div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setProfileType('CLOTHING')}
-                    className={`p-3 rounded-xl border text-left transition-all ${
-                      profileType === 'CLOTHING'
-                        ? 'border-[#0F4D32] bg-[#F2F8F4] text-[#0F4D32]'
-                        : 'border-slate-200 bg-white text-slate-700'
-                    }`}
-                  >
-                    <div className="font-bold text-xs">Clothing</div>
-                    <div className="text-[10px] text-slate-500">Apparel & Variants</div>
-                  </button>
+                    <div className="font-bold text-xs">Kirana / General Store</div>
+                    <div className="text-[10px] text-slate-500">Grocery, Provisions & Daily Essentials</div>
+                  </div>
                 </div>
               </div>
             </div>

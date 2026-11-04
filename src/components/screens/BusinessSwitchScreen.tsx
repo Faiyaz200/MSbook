@@ -56,8 +56,7 @@ export const BusinessSwitchScreen: React.FC<BusinessSwitchScreenProps> = ({
 
         {businesses.map((business) => {
           const isActive = business.id === activeBusinessId;
-          const isClothing = business.businessType === 'CLOTHING';
-          const meta = BUSINESS_TYPES[business.businessType];
+          const meta = BUSINESS_TYPES.KIRANA;
 
           return (
             <div
@@ -79,11 +78,7 @@ export const BusinessSwitchScreen: React.FC<BusinessSwitchScreenProps> = ({
                       : 'bg-[#F2F8F4] text-[#0F4D32]'
                   }`}
                 >
-                  {isClothing ? (
-                    <Shirt className="w-6 h-6" />
-                  ) : (
-                    <ShoppingBag className="w-6 h-6" />
-                  )}
+                  <ShoppingBag className="w-6 h-6" />
                 </div>
 
                 <div className="min-w-0 flex-1">

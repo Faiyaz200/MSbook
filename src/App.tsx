@@ -92,18 +92,56 @@ export default function App() {
     setScreenStack((prev) => [...prev, screen]);
   };
 
-  const handleSystemBack = () => {
-    if (screenStack.length <= 1) {
-      showToast('At initial app root (Android System Back)');
-      return;
+  const [lastBackPressTime, setLastBackPressTime] = useState<number>(0);
+
+  const handleSystemBack = (): boolean => {
+    // 1. If screen stack has sub-screens, navigate back 1 page
+    if (screenStack.length > 1) {
+      setScreenStack((prev) => {
+        const nextStack = [...prev];
+        nextStack.pop();
+        return nextStack;
+      });
+      return true;
     }
 
-    setScreenStack((prev) => {
-      const nextStack = [...prev];
-      nextStack.pop();
-      return nextStack;
-    });
+    // 2. If single item on a non-dashboard tab, navigate back to Dashboard
+    if (currentScreen.name !== 'DASHBOARD') {
+      setScreenStack([{ name: 'DASHBOARD' }]);
+      return true;
+    }
+
+    // 3. On Dashboard: 2-step back button to exit
+    const now = Date.now();
+    if (now - lastBackPressTime < 2000) {
+      showToast('Exiting MSbook...');
+      return false;
+    } else {
+      setLastBackPressTime(now);
+      showToast('Press back again to exit');
+      return true;
+    }
   };
+
+  useEffect(() => {
+    (window as any).handleAndroidBack = () => {
+      return handleSystemBack();
+    };
+
+    const onPop = (e: PopStateEvent) => {
+      e.preventDefault();
+      handleSystemBack();
+      window.history.pushState(null, '', window.location.href);
+    };
+
+    window.history.pushState(null, '', window.location.href);
+    window.addEventListener('popstate', onPop);
+
+    return () => {
+      delete (window as any).handleAndroidBack;
+      window.removeEventListener('popstate', onPop);
+    };
+  }, [screenStack, currentScreen, lastBackPressTime]);
 
   // Switch between primary bottom tabs (Dashboard, Vouchers, Ledgers, Inventory, Reports)
   const handleSelectBottomTab = (tab: BottomTabKey) => {

@@ -244,11 +244,24 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private var lastBackPressTime = 0L
+
     private fun setupBackNavigation() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (::webView.isInitialized && webView.canGoBack()) {
-                    webView.goBack()
+                if (::webView.isInitialized) {
+                    webView.evaluateJavascript("window.handleAndroidBack ? window.handleAndroidBack() : false") { result ->
+                        val handledInApp = result == "true"
+                        if (!handledInApp) {
+                            val currentTime = System.currentTimeMillis()
+                            if (currentTime - lastBackPressTime < 2000) {
+                                finish()
+                            } else {
+                                lastBackPressTime = currentTime
+                                Toast.makeText(this@MainActivity, "Press back again to exit", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
                 } else {
                     finish()
                 }

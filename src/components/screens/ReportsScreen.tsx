@@ -11,8 +11,11 @@ import {
   Search,
   CheckCircle2,
   AlertCircle,
+  Trash2,
+  Clock,
+  ShieldCheck,
 } from 'lucide-react';
-import { Business, Customer } from '../../types';
+import { Business, Customer, DeletedStockItem } from '../../types';
 import { db } from '../../services/db';
 
 interface ReportsScreenProps {
@@ -48,6 +51,10 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
     stockValue: 0,
     totalCustomerUdhar: 0,
   });
+
+  // Deleted Inventory History
+  const [deletedStockList, setDeletedStockList] = useState<DeletedStockItem[]>([]);
+  const [deleteMsg, setDeleteMsg] = useState<string | null>(null);
 
   const loadData = () => {
     const fin = db.getBusinessFinancialSummary(activeBusiness.id);
@@ -85,6 +92,9 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
       stockValue: fin.stockValue,
       totalCustomerUdhar: totalUdhar,
     });
+
+    // Load deleted stock history
+    setDeletedStockList(db.getDeletedStockItems(activeBusiness.id));
   };
 
   useEffect(() => {
@@ -110,6 +120,18 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
       ? ((financials.netProfit / financials.totalSales) * 100).toFixed(1)
       : '0.0';
 
+  const handlePermanentDelete = (id: string, name: string) => {
+    try {
+      db.deletePermanentStockItem(activeBusiness.id, id);
+      setDeleteMsg(`'${name}' permanently delete ho gaya.`);
+      setTimeout(() => setDeleteMsg(null), 3000);
+      loadData();
+    } catch (err) {
+      setDeleteMsg(err instanceof Error ? err.message : 'Error deleting item');
+      setTimeout(() => setDeleteMsg(null), 4000);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-[#F8FAF8] select-none text-slate-800">
       {/* Header (MSbook Dark Green) */}
@@ -121,7 +143,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight leading-none text-white">
-                Reports & Accounts
+                Reports & Khata
               </h1>
               <p className="text-[11px] text-emerald-100 font-medium mt-1 truncate max-w-[200px]">
                 {activeBusiness.businessName}
@@ -130,24 +152,36 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
           </div>
 
           <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-white/15 text-white text-[11px] font-semibold border border-white/20">
-            <span>Udhar & P&L</span>
+            <span>Audit & P&L</span>
           </div>
         </div>
       </div>
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {/* 1. Profit & Loss (P&L) Section */}
+        {deleteMsg && (
+          <div className="p-3 bg-slate-900 text-white rounded-xl text-xs font-medium shadow-md">
+            {deleteMsg}
+          </div>
+        )}
+
+        {/* 1. Net Profit / Munafa Summary Card */}
         <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center space-x-1.5">
-              <TrendingUp className="w-4 h-4 text-[#0F4D32]" />
-              <span>Profit & Loss Statement</span>
-            </h3>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-[#0F4D32] flex items-center justify-center">
+                <TrendingUp className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-xs font-bold text-slate-900">Profit & Loss (Munafa)</h3>
+                <span className="text-[10px] text-slate-400">Total Business Performance</span>
+              </div>
+            </div>
+
             <span
-              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+              className={`text-xs font-black px-2.5 py-1 rounded-full ${
                 financials.netProfit >= 0
-                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                  ? 'bg-emerald-50 text-[#0F4D32] border border-emerald-200'
                   : 'bg-red-50 text-red-700 border border-red-200'
               }`}
             >
@@ -155,87 +189,69 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2.5">
-            {/* Total Sales */}
-            <div className="bg-[#F8FAF8] rounded-xl p-3 border border-slate-200">
-              <span className="text-[10px] font-semibold text-slate-500 block">Total Sales</span>
-              <p className="font-mono text-base font-black text-slate-900 mt-0.5">
+          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 text-center">
+            <div className="bg-[#F8FAF8] rounded-xl p-2.5">
+              <span className="text-[10px] text-slate-500 font-medium block">Total Sales</span>
+              <span className="font-mono text-xs font-bold text-slate-900 block mt-0.5">
                 ₹{financials.totalSales.toLocaleString('en-IN', { maximumFractionDigits: 1 })}
-              </p>
-              <span className="text-[9px] text-slate-400">Total bills revenue</span>
-            </div>
-
-            {/* Total Purchases */}
-            <div className="bg-[#F8FAF8] rounded-xl p-3 border border-slate-200">
-              <span className="text-[10px] font-semibold text-slate-500 block">Purchases & Cost</span>
-              <p className="font-mono text-base font-black text-slate-900 mt-0.5">
-                ₹{financials.totalPurchases.toLocaleString('en-IN', { maximumFractionDigits: 1 })}
-              </p>
-              <span className="text-[9px] text-slate-400">Inventory cost</span>
-            </div>
-          </div>
-
-          {/* Net Profit Banner */}
-          <div
-            className={`p-3.5 rounded-xl border flex items-center justify-between ${
-              financials.netProfit >= 0
-                ? 'bg-emerald-50/70 border-emerald-200 text-[#0F4D32]'
-                : 'bg-red-50/70 border-red-200 text-red-700'
-            }`}
-          >
-            <div>
-              <span className="text-xs font-bold block">
-                {financials.netProfit >= 0 ? 'Net Profit (Munafa)' : 'Net Loss'}
               </span>
-              <span className="text-[10px] opacity-80">Sales minus product cost basis</span>
             </div>
-            <span className="font-mono text-xl font-black">
-              {financials.netProfit >= 0 ? '+' : ''}₹
-              {financials.netProfit.toLocaleString('en-IN', { maximumFractionDigits: 1 })}
-            </span>
+            <div className="bg-[#F8FAF8] rounded-xl p-2.5">
+              <span className="text-[10px] text-slate-500 font-medium block">Purchases</span>
+              <span className="font-mono text-xs font-bold text-slate-900 block mt-0.5">
+                ₹{financials.totalPurchases.toLocaleString('en-IN', { maximumFractionDigits: 1 })}
+              </span>
+            </div>
+            <div className="bg-[#F2F8F4] border border-emerald-200 rounded-xl p-2.5">
+              <span className="text-[10px] text-[#0F4D32] font-bold block">Net Munafa</span>
+              <span
+                className={`font-mono text-xs font-black block mt-0.5 ${
+                  financials.netProfit >= 0 ? 'text-[#0F4D32]' : 'text-red-600'
+                }`}
+              >
+                ₹{financials.netProfit.toLocaleString('en-IN', { maximumFractionDigits: 1 })}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* 2. Customer Udhari (Debtors Outstanding List) */}
+        {/* 2. Customer Udhari List (Khata) */}
         <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-            <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center space-x-1.5">
-                <Users className="w-4 h-4 text-amber-600" />
-                <span>Customer Udhari (Khata)</span>
-              </h3>
-              <span className="text-[10px] text-slate-400">Total customer credit due</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-800 flex items-center justify-center">
+                <Users className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-xs font-bold text-slate-900">Customer Udhari (Khata)</h3>
+                <span className="text-[10px] text-slate-400">Market se lena baki</span>
+              </div>
             </div>
+
             <div className="text-right">
-              <span className="text-sm font-black text-amber-700 block font-mono">
+              <span className="text-[10px] text-slate-500 block">Total Udhar</span>
+              <span className="font-mono text-sm font-black text-amber-800">
                 ₹{financials.totalCustomerUdhar.toLocaleString('en-IN', { maximumFractionDigits: 1 })}
-              </span>
-              <span className="text-[10px] text-slate-400">
-                {customerBalances.length} log baki he
               </span>
             </div>
           </div>
 
-          {/* Search Customer in Udhari */}
-          {customerBalances.length > 3 && (
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
-              <input
-                type="text"
-                placeholder="Search customer name or phone..."
-                value={searchCust}
-                onChange={(e) => setSearchCust(e.target.value)}
-                className="w-full bg-[#F8FAF8] border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-800 outline-none focus:border-amber-500"
-              />
-            </div>
-          )}
+          {/* Search Box */}
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+            <input
+              type="text"
+              placeholder="Search customer name or mobile..."
+              value={searchCust}
+              onChange={(e) => setSearchCust(e.target.value)}
+              className="w-full bg-[#F8FAF8] border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-800 outline-none focus:border-[#0F4D32]"
+            />
+          </div>
 
-          {/* Udhari List */}
+          {/* Customer Rows */}
           {customerBalances.length === 0 ? (
-            <div className="p-6 text-center text-slate-400 space-y-1">
-              <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto stroke-[1.8px]" />
-              <p className="text-xs font-bold text-slate-700">Kisi ka bhi Udhar baki nahi hai!</p>
-              <p className="text-[10px] text-slate-400">All customer accounts are settled and clear.</p>
+            <div className="p-4 text-center text-xs text-slate-400 bg-[#F8FAF8] rounded-xl">
+              Kisi bhi customer ka udhar baki nahi hai. All cleared!
             </div>
           ) : filteredUdhari.length === 0 ? (
             <div className="p-4 text-center text-xs text-slate-400">
@@ -311,7 +327,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
           )}
         </div>
 
-        {/* 3. Liquid Balances (Cash, Bank, UPI, Stock Value) */}
+        {/* 3. Liquid Balances (Cash, Bank, UPI) */}
         <div className="grid grid-cols-2 gap-2.5">
           <div className="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-xs">
             <span className="text-[10px] font-semibold text-slate-500 flex items-center space-x-1">
@@ -334,6 +350,110 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
               })}
             </p>
           </div>
+        </div>
+
+        {/* 4. USER REQUIREMENT: Deleted Stock History (Separate Audit - 1 Month Retention) */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-3">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
+                <Trash2 className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-xs font-bold text-slate-900">Deleted Stock History</h3>
+                <span className="text-[10px] text-slate-400">Inventory se hataya gaya maal (Alag Audit)</span>
+              </div>
+            </div>
+
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+              {deletedStockList.length} Items
+            </span>
+          </div>
+
+          <p className="text-[11px] text-slate-500 leading-normal">
+            Ye maal inventory se galat hone par delete kiya gaya tha. <strong>Iska kisi bhi hisab, P&L ya customer udhar se lena-dena nahi hai.</strong> 1 mahine (30 din) ke baad user isko permanent delete kar sakta hai.
+          </p>
+
+          {deletedStockList.length === 0 ? (
+            <div className="p-4 text-center text-xs text-slate-400 bg-[#F8FAF8] rounded-xl border border-slate-100">
+              Koi deleted stock record nahi hai.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {deletedStockList.map((item) => {
+                const deletedDateStr = new Date(item.deletedAt).toLocaleDateString('en-GB', {
+                  day: '2-digit',
+                  month: 'short',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                });
+
+                // Calculate days passed since deletion
+                const daysPassed = Math.floor((Date.now() - item.deletedAt) / (1000 * 60 * 60 * 24));
+                const daysRemaining = Math.max(0, 30 - daysPassed);
+                const canPermanentDelete = daysPassed >= 30;
+
+                return (
+                  <div
+                    key={item.id}
+                    className="p-3 rounded-xl bg-[#F8FAF8] border border-slate-200 flex flex-col space-y-2"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h4 className="font-bold text-slate-900 text-xs">{item.name}</h4>
+                        <p className="text-[10px] text-slate-500 mt-0.5">
+                          Deleted on: {deletedDateStr} • Qty: {item.stockQuantity} {item.unit}
+                        </p>
+                        <p className="text-[10px] text-slate-400">
+                          Cost: ₹{item.purchaseCost.toFixed(2)} | Sell: ₹{item.sellingPrice} | Val: ₹{item.totalValuation.toFixed(2)}
+                        </p>
+                      </div>
+
+                      {/* 30 Days Status Badge */}
+                      <div className="text-right">
+                        {canPermanentDelete ? (
+                          <span className="inline-flex items-center text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                            1 Month Passed
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center text-[10px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                            <Clock className="w-3 h-3 mr-1 text-slate-500" />
+                            {daysRemaining} din baki
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Permanent Delete Action Button */}
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 text-[10px]">
+                      <span className="text-slate-500 italic truncate max-w-[200px]">
+                        {item.reason || 'User deleted'}
+                      </span>
+
+                      {canPermanentDelete ? (
+                        <button
+                          type="button"
+                          onClick={() => handlePermanentDelete(item.id, item.name)}
+                          className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors flex items-center space-x-1 shadow-2xs"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span>Permanent Delete</span>
+                        </button>
+                      ) : (
+                        <span
+                          className="text-[10px] text-slate-400 font-medium"
+                          title="1 mahina pura hone par delete button active hoga"
+                        >
+                          Permanent delete in {daysRemaining} days
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>

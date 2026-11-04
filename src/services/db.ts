@@ -23,6 +23,7 @@ import {
   BusinessSettings,
   MSbookBackupPayload,
   ExportDataType,
+  DeletedStockItem,
 } from '../types';
 
 const STORAGE_KEY_BUSINESSES = 'msbook_room_db_businesses';
@@ -31,6 +32,7 @@ const STORAGE_KEY_CUSTOMERS = 'msbook_room_db_customers';
 const STORAGE_KEY_SUPPLIERS = 'msbook_room_db_suppliers';
 const STORAGE_KEY_ACCOUNTS = 'msbook_room_db_ledger_accounts';
 const STORAGE_KEY_PRODUCTS = 'msbook_room_db_products';
+const STORAGE_KEY_DELETED_STOCK = 'msbook_deleted_stock_items';
 const STORAGE_KEY_STOCK_MOVEMENTS = 'msbook_room_db_stock_movements';
 const STORAGE_KEY_VOUCHERS = 'msbook_room_db_vouchers';
 const STORAGE_KEY_VOUCHER_ITEMS = 'msbook_room_db_voucher_items';
@@ -43,6 +45,23 @@ class RoomDatabaseSimulator {
 
   constructor() {
     this.purgeDemoDataMigration();
+    this.migrateClothingToKirana();
+  }
+
+  private migrateClothingToKirana(): void {
+    try {
+      const allBiz = this.getAllBusinesses();
+      let changed = false;
+      allBiz.forEach((b) => {
+        if ((b as any).businessType === 'CLOTHING') {
+          b.businessType = 'KIRANA';
+          changed = true;
+        }
+      });
+      if (changed) {
+        localStorage.setItem(STORAGE_KEY_BUSINESSES, JSON.stringify(allBiz));
+      }
+    } catch (_e) {}
   }
 
   private notify() {
@@ -822,6 +841,72 @@ class RoomDatabaseSimulator {
     this.notify();
   }
 
+  getAllDeletedStockRaw(): DeletedStockItem[] {
+    try {
+      const data = localStorage.getItem(STORAGE_KEY_DELETED_STOCK);
+      if (!data) return [];
+      const parsed = JSON.parse(data);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  getDeletedStockItems(businessId: string): DeletedStockItem[] {
+    return this.getAllDeletedStockRaw()
+      .filter((d) => d.businessId === businessId)
+      .sort((a, b) => b.deletedAt - a.deletedAt);
+  }
+
+  deleteProductToTrash(businessId: string, productId: string, reason?: string): DeletedStockItem | null {
+    const all = this.getAllProductsRaw();
+    const prod = all.find((p) => p.id === productId && p.businessId === businessId);
+    if (!prod) return null;
+
+    // Remove from active inventory so it no longer appears in inventory, sale item, or stock valuation
+    const remaining = all.filter((p) => p.id !== productId);
+    localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(remaining));
+
+    // Save to deleted stock audit history (does NOT affect any financial accounts or P&L)
+    const deletedList = this.getAllDeletedStockRaw();
+    const deletedRecord: DeletedStockItem = {
+      id: 'del_' + Math.random().toString(36).substring(2, 9),
+      businessId,
+      originalProductId: prod.id,
+      name: prod.name,
+      deletedAt: Date.now(),
+      stockQuantity: prod.stockQuantity,
+      unit: prod.unit,
+      purchaseCost: prod.purchaseCost,
+      sellingPrice: prod.sellingPrice,
+      totalValuation: prod.stockQuantity * prod.purchaseCost,
+      reason: reason || 'Inventory entry deleted by user',
+    };
+    deletedList.unshift(deletedRecord);
+    localStorage.setItem(STORAGE_KEY_DELETED_STOCK, JSON.stringify(deletedList));
+
+    this.notify();
+    return deletedRecord;
+  }
+
+  deletePermanentStockItem(businessId: string, id: string): boolean {
+    const list = this.getAllDeletedStockRaw();
+    const item = list.find((d) => d.id === id && d.businessId === businessId);
+    if (!item) return false;
+
+    // Allowed after 30 days (1 month = 30 * 24 * 60 * 60 * 1000 ms)
+    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    if (now - item.deletedAt < thirtyDaysMs) {
+      throw new Error('This item can only be permanently deleted after 1 month (30 days) from removal.');
+    }
+
+    const filtered = list.filter((d) => d.id !== id);
+    localStorage.setItem(STORAGE_KEY_DELETED_STOCK, JSON.stringify(filtered));
+    this.notify();
+    return true;
+  }
+
   // --- Stock Adjustment ---
   adjustStock(params: {
     businessId: string;
@@ -1372,6 +1457,7 @@ class RoomDatabaseSimulator {
       quantity: number;
       unit: string;
       purchaseCost: number;
+      sellingPrice?: number;
     }>;
     cashAmount: number;
     upiAmount: number;
@@ -1431,6 +1517,9 @@ class RoomDatabaseSimulator {
         const prevStock = prod.stockQuantity;
         prod.stockQuantity += it.quantity;
         prod.purchaseCost = it.purchaseCost;
+        if (it.sellingPrice && it.sellingPrice > 0) {
+          prod.sellingPrice = it.sellingPrice;
+        }
         this.recordStockMovement({
           businessId,
           productId: prod.id,
@@ -1450,7 +1539,7 @@ class RoomDatabaseSimulator {
           name: it.productName,
           barcode: '',
           unit: it.unit,
-          sellingPrice: it.purchaseCost * 1.3,
+          sellingPrice: it.sellingPrice && it.sellingPrice > 0 ? it.sellingPrice : it.purchaseCost * 1.25,
           purchaseCost: it.purchaseCost,
           openingStock: 0,
           stockQuantity: it.quantity,

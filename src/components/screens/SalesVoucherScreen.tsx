@@ -85,9 +85,8 @@ export const SalesVoucherScreen: React.FC<SalesVoucherScreenProps> = ({
 
     const custList = db.getCustomers(activeBusiness.id);
     setCustomers(custList);
-    if (custList.length > 0) {
-      setSelectedCustomerId(custList[0].id);
-    }
+    // Walk-in Customer auto-selected by default so user can sell directly without selecting
+    setSelectedCustomerId('');
 
     // Only products that have stock in inventory > 0
     const allProds = db.getProducts(activeBusiness.id);
