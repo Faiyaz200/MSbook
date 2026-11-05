@@ -193,7 +193,7 @@ export default function App() {
   };
 
   return (
-    <div className="w-full h-screen bg-[#F8FAF8] flex flex-col font-sans overflow-hidden">
+    <div className="w-full h-full min-h-[100dvh] max-h-[100dvh] bg-[#F8FAF8] flex flex-col font-sans overflow-hidden">
       {/* Top AI Studio Developer Control Bar (Hidden on Mobile/App View) */}
       <header className="hidden md:flex h-12 bg-slate-900 border-b border-slate-800 px-4 sm:px-6 items-center justify-between shrink-0 z-30 select-none text-white">
         <div className="flex items-center space-x-3">

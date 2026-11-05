@@ -31,20 +31,21 @@ export const PurchaseVoucherScreen: React.FC<PurchaseVoucherScreenProps> = ({
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | undefined>(preSelectedSupplierId);
   const [suppliers, setSuppliers] = useState<any[]>([]);
 
-  // Item form states
+  // Item form states (all blank by default - no prefilled example numbers)
   const [productName, setProductName] = useState('');
-  const [unit, setUnit] = useState('pcs');
+  const [unit, setUnit] = useState<'packet' | 'pcs' | 'kg' | 'ltr'>('packet');
   
-  // Packet calculations
-  const [isPacketMode, setIsPacketMode] = useState(true);
-  const [packetsCount, setPacketsCount] = useState('2');
-  const [pcsPerPacket, setPcsPerPacket] = useState('22');
-  const [quantity, setQuantity] = useState('44');
+  // Packets & Pieces inputs
+  const [packetsCount, setPacketsCount] = useState('');
+  const [pcsPerPacket, setPcsPerPacket] = useState('');
+  const [quantityPcs, setQuantityPcs] = useState('');
   
-  // Cost: user enters packet rate or unit rate (labeled as "Cost")
-  const [costInput, setCostInput] = useState('176');
-  // Selling rate per pc/unit
-  const [sellingRate, setSellingRate] = useState('10');
+  // Dual Cost inputs: user can enter Cost per Packet OR Cost per Pc
+  const [costPerPacket, setCostPerPacket] = useState('');
+  const [costPerPc, setCostPerPc] = useState('');
+  
+  // Compulsory Selling Rate per Pc / unit
+  const [sellingRate, setSellingRate] = useState('');
 
   const [items, setItems] = useState<PurchaseItem[]>([]);
 
@@ -71,16 +72,66 @@ export const PurchaseVoucherScreen: React.FC<PurchaseVoucherScreenProps> = ({
     }
   }, [activeBusiness.id, preSelectedSupplierId]);
 
-  // Auto-calculate quantity from packetsCount and pcsPerPacket
-  useEffect(() => {
-    if (unit === 'pcs' && isPacketMode) {
-      const p = parseFloat(packetsCount) || 0;
-      const pcs = parseFloat(pcsPerPacket) || 0;
-      if (p > 0 && pcs > 0) {
-        setQuantity((p * pcs).toString());
-      }
+  // Synchronize Packets -> Total Pieces
+  const handlePacketsChange = (val: string) => {
+    setPacketsCount(val);
+    const p = parseFloat(val) || 0;
+    const pcs = parseFloat(pcsPerPacket) || 0;
+    if (p > 0 && pcs > 0) {
+      setQuantityPcs((p * pcs).toString());
+    } else if (p === 0 && !quantityPcs) {
+      setQuantityPcs('');
     }
-  }, [packetsCount, pcsPerPacket, isPacketMode, unit]);
+  };
+
+  const handlePcsPerPacketChange = (val: string) => {
+    setPcsPerPacket(val);
+    const pcs = parseFloat(val) || 0;
+    const p = parseFloat(packetsCount) || 0;
+    if (p > 0 && pcs > 0) {
+      setQuantityPcs((p * pcs).toString());
+    }
+    // Also re-sync cost per packet / pc if one was entered
+    const cpPkt = parseFloat(costPerPacket) || 0;
+    const cpPc = parseFloat(costPerPc) || 0;
+    if (cpPkt > 0 && pcs > 0) {
+      setCostPerPc((cpPkt / pcs).toFixed(2));
+    } else if (cpPc > 0 && pcs > 0) {
+      setCostPerPacket((cpPc * pcs).toFixed(2));
+    }
+  };
+
+  const handleQuantityPcsChange = (val: string) => {
+    setQuantityPcs(val);
+    const totalPcs = parseFloat(val) || 0;
+    const pcs = parseFloat(pcsPerPacket) || 0;
+    if (totalPcs > 0 && pcs > 0) {
+      setPacketsCount((totalPcs / pcs).toString());
+    }
+  };
+
+  // Synchronize Cost per Packet <-> Cost per Pc
+  const handleCostPerPacketChange = (val: string) => {
+    setCostPerPacket(val);
+    const cpPkt = parseFloat(val) || 0;
+    const pcs = parseFloat(pcsPerPacket) || 0;
+    if (cpPkt > 0 && pcs > 0) {
+      setCostPerPc((cpPkt / pcs).toFixed(2));
+    } else if (!val) {
+      setCostPerPc('');
+    }
+  };
+
+  const handleCostPerPcChange = (val: string) => {
+    setCostPerPc(val);
+    const cpPc = parseFloat(val) || 0;
+    const pcs = parseFloat(pcsPerPacket) || 0;
+    if (cpPc > 0 && pcs > 0) {
+      setCostPerPacket((cpPc * pcs).toFixed(2));
+    } else if (!val) {
+      setCostPerPacket('');
+    }
+  };
 
   // Total purchase amount of items
   const totalAmount = items.reduce((sum, it) => sum + it.totalCost, 0);
@@ -99,51 +150,83 @@ export const PurchaseVoucherScreen: React.FC<PurchaseVoucherScreenProps> = ({
 
     const name = productName.trim();
     if (!name) {
-      setErrorMessage('Kripya Product / Item ka naam dalein');
+      setErrorMessage('Please enter Product / Item name');
       return;
     }
 
     const sRate = parseFloat(sellingRate) || 0;
     if (sRate <= 0) {
-      setErrorMessage('Kripya Selling Rate (₹) dalein');
+      setErrorMessage('Please enter Selling Rate (₹ per Pc) (Compulsory)');
       return;
     }
 
-    let finalQty = parseFloat(quantity) || 0;
+    let finalQty = 0;
     let finalTotalCost = 0;
     let unitCost = 0;
     let packetNote = '';
 
-    const costVal = parseFloat(costInput) || 0;
-    if (costVal <= 0) {
-      setErrorMessage('Kripya Cost dalein');
-      return;
-    }
+    const pCount = parseFloat(packetsCount) || 0;
+    const pcsCount = parseFloat(pcsPerPacket) || 0;
+    const directQty = parseFloat(quantityPcs) || 0;
 
-    if (unit === 'pcs' && isPacketMode) {
-      const pCount = parseFloat(packetsCount) || 0;
-      const pcsCount = parseFloat(pcsPerPacket) || 0;
-      if (pCount <= 0 || pcsCount <= 0) {
-        setErrorMessage('Kripya Packets aur Pcs per Packet ki quantity dalein');
+    const cpPkt = parseFloat(costPerPacket) || 0;
+    const cpPc = parseFloat(costPerPc) || 0;
+
+    // Validation: Packets and Pcs - either one must be filled
+    if (unit === 'packet' || unit === 'pcs') {
+      if (pCount <= 0 && directQty <= 0) {
+        setErrorMessage('Please fill either Number of Packets or Total Pieces');
         return;
       }
-      finalQty = pCount * pcsCount;
-      // costInput is cost per packet (e.g. 176 * 2 = 352)
-      finalTotalCost = costVal * pCount;
-      unitCost = finalQty > 0 ? finalTotalCost / finalQty : 0;
-      packetNote = `${pCount} Pkt × ${pcsCount} Pcs = ${finalQty} pcs (@ ₹${costVal}/pkt)`;
+
+      // Calculate final quantity
+      if (pCount > 0 && pcsCount > 0) {
+        finalQty = pCount * pcsCount;
+      } else if (pCount > 0 && pcsCount <= 0 && directQty <= 0) {
+        setErrorMessage('Please enter Pcs in 1 Packet to calculate total pieces');
+        return;
+      } else {
+        finalQty = directQty;
+      }
+
+      // Cost calculation: either Cost per Packet OR Cost per Pc
+      if (cpPkt <= 0 && cpPc <= 0) {
+        setErrorMessage('Please enter Cost (either per Packet or per Piece)');
+        return;
+      }
+
+      if (cpPkt > 0 && pCount > 0) {
+        // Calculation by Packet Cost
+        finalTotalCost = pCount * cpPkt;
+        unitCost = finalQty > 0 ? finalTotalCost / finalQty : cpPkt;
+        packetNote = `${pCount} Pkt × ${pcsCount || 1} Pcs = ${finalQty} pcs (@ ₹${cpPkt}/pkt)`;
+      } else if (cpPc > 0) {
+        // Calculation by Piece Cost
+        unitCost = cpPc;
+        finalTotalCost = finalQty * cpPc;
+        if (pCount > 0 && pcsCount > 0) {
+          packetNote = `${pCount} Pkt × ${pcsCount} Pcs = ${finalQty} pcs (@ ₹${cpPc}/pc)`;
+        }
+      } else if (cpPkt > 0) {
+        finalTotalCost = cpPkt;
+        unitCost = finalQty > 0 ? finalTotalCost / finalQty : cpPkt;
+      }
     } else {
-      if (finalQty <= 0) {
-        setErrorMessage('Kripya valid Quantity dalein');
+      // For kg / ltr
+      if (directQty <= 0) {
+        setErrorMessage(`Please enter Quantity in ${unit}`);
         return;
       }
-      unitCost = costVal;
+      if (cpPc <= 0 && cpPkt <= 0) {
+        setErrorMessage('Please enter Cost per unit');
+        return;
+      }
+      unitCost = cpPc > 0 ? cpPc : cpPkt;
+      finalQty = directQty;
       finalTotalCost = finalQty * unitCost;
     }
 
-    // --- REQUIREMENT: Duplicate Stock Name (First 5 letters check) ---
-    // If first 5 letters match AND selling rate is identical -> BLOCK IT!
-    // If selling rate is different (e.g. ₹10 vs ₹5) -> ALLOW IT!
+    // --- Duplicate Stock Name Check (First 5 letters) ---
     const cleanName = name.toLowerCase();
     const prefix5 = cleanName.length >= 5 ? cleanName.substring(0, 5) : cleanName;
 
@@ -152,7 +235,6 @@ export const PurchaseVoucherScreen: React.FC<PurchaseVoucherScreenProps> = ({
       const pClean = p.name.trim().toLowerCase();
       const pPrefix5 = pClean.length >= 5 ? pClean.substring(0, 5) : pClean;
       if (pPrefix5 === prefix5) {
-        // If selling rate matches identical rate
         if (Math.abs((p.sellingPrice || 0) - sRate) < 0.01) {
           return true;
         }
@@ -174,7 +256,7 @@ export const PurchaseVoucherScreen: React.FC<PurchaseVoucherScreenProps> = ({
     if (dupInDb || dupInCurrentItems) {
       const conflictName = dupInDb ? dupInDb.name : dupInCurrentItems?.productName;
       setErrorMessage(
-        `Duplicate stock item! '${conflictName}' pehle se maujood hai jiska selling rate bhi ₹${sRate} hai. Same selling rate ke sath duplicate item add nahi ho sakta. (Agar selling rate alag hai to add ho sakta hai).`
+        `Duplicate stock item! '${conflictName}' already exists with the same selling rate of ₹${sRate}. Items with identical names must have different selling rates to be added.`
       );
       return;
     }
@@ -182,7 +264,7 @@ export const PurchaseVoucherScreen: React.FC<PurchaseVoucherScreenProps> = ({
     const newItem: PurchaseItem = {
       productName: name,
       quantity: finalQty,
-      unit,
+      unit: unit === 'packet' ? 'pcs' : unit,
       purchaseCost: unitCost,
       sellingPrice: sRate,
       totalCost: finalTotalCost,
@@ -193,8 +275,15 @@ export const PurchaseVoucherScreen: React.FC<PurchaseVoucherScreenProps> = ({
     setItems(nextItems);
     const nextTotal = nextItems.reduce((s, it) => s + it.totalCost, 0);
 
-    // Reset item form
+    // Reset item form to COMPLETELY BLANK for next entry (User Requirement)
     setProductName('');
+    setPacketsCount('');
+    setPcsPerPacket('');
+    setQuantityPcs('');
+    setCostPerPacket('');
+    setCostPerPc('');
+    setSellingRate('');
+
     if (items.length === 0) {
       setCashAmount(nextTotal.toString());
       setUpiAmount('0');
@@ -215,15 +304,15 @@ export const PurchaseVoucherScreen: React.FC<PurchaseVoucherScreenProps> = ({
 
   const handleSave = () => {
     if (!supplierName.trim()) {
-      setErrorMessage('Kripya Supplier ka naam dalein');
+      setErrorMessage('Please enter a supplier name');
       return;
     }
     if (items.length === 0) {
-      setErrorMessage('Kam se kam ek item add karein');
+      setErrorMessage('Please add at least one item');
       return;
     }
     if (!isBalanced) {
-      setErrorMessage(`Payment allocation (₹${totalAllocated}) purchase total (₹${totalAmount}) ke barabar hona chahiye`);
+      setErrorMessage(`Payment allocation (₹${totalAllocated}) must equal purchase total (₹${totalAmount})`);
       return;
     }
 
@@ -248,7 +337,7 @@ export const PurchaseVoucherScreen: React.FC<PurchaseVoucherScreenProps> = ({
 
       onPurchaseSaved();
     } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : 'Purchase save karne me truti aayi');
+      setErrorMessage(err instanceof Error ? err.message : 'Error saving purchase voucher');
     } finally {
       setIsSaving(false);
     }
@@ -326,26 +415,16 @@ export const PurchaseVoucherScreen: React.FC<PurchaseVoucherScreenProps> = ({
           />
         </div>
 
-        {/* Item Entry Box with Packet Calculations */}
+        {/* Item Entry Box with Packets & Pieces Dual Rates */}
         <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold text-slate-800">Add Stock to Inventory</h3>
-            {unit === 'pcs' && (
-              <label className="flex items-center space-x-1.5 cursor-pointer text-[11px] font-medium text-slate-600">
-                <input
-                  type="checkbox"
-                  checked={isPacketMode}
-                  onChange={(e) => setIsPacketMode(e.target.checked)}
-                  className="rounded text-[#0F4D32] focus:ring-0"
-                />
-                <span>Packet Box Calc</span>
-              </label>
-            )}
+            <span className="text-[10px] text-slate-400 font-medium">Fill packets or pcs</span>
           </div>
 
           <input
             type="text"
-            placeholder="Item / Product Name * (e.g. Parle-G)"
+            placeholder="Item / Product Name *"
             value={productName}
             onChange={(e) => setProductName(e.target.value)}
             className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-[#0F4D32]"
@@ -354,12 +433,12 @@ export const PurchaseVoucherScreen: React.FC<PurchaseVoucherScreenProps> = ({
           {/* Unit Selector */}
           <div className="flex items-center space-x-2">
             <span className="text-[11px] text-slate-500 font-semibold">Unit:</span>
-            {(['pcs', 'kg', 'ltr'] as const).map((u) => (
+            {(['packet', 'pcs', 'kg', 'ltr'] as const).map((u) => (
               <button
                 key={u}
                 type="button"
                 onClick={() => setUnit(u)}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
+                className={`px-3 py-1 rounded-lg text-xs font-bold capitalize transition-colors ${
                   unit === u
                     ? 'bg-[#0F4D32] text-white shadow-xs'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -370,8 +449,8 @@ export const PurchaseVoucherScreen: React.FC<PurchaseVoucherScreenProps> = ({
             ))}
           </div>
 
-          {/* Packet / Box Calculations (if unit is pcs and packet mode on) */}
-          {unit === 'pcs' && isPacketMode ? (
+          {/* Packet / Pieces Section */}
+          {unit === 'packet' || unit === 'pcs' ? (
             <div className="p-3 bg-emerald-50/60 border border-emerald-200/80 rounded-xl space-y-2.5">
               <div className="grid grid-cols-2 gap-2">
                 <div>
@@ -380,9 +459,11 @@ export const PurchaseVoucherScreen: React.FC<PurchaseVoucherScreenProps> = ({
                   </label>
                   <input
                     type="number"
-                    placeholder="e.g. 2"
+                    min="0"
+                    step="any"
+                    placeholder="Enter Packets"
                     value={packetsCount}
-                    onChange={(e) => setPacketsCount(e.target.value)}
+                    onChange={(e) => handlePacketsChange(e.target.value)}
                     className="w-full px-2.5 py-1.5 text-xs bg-white border border-emerald-300 rounded-lg focus:outline-none focus:border-[#0F4D32] font-mono font-semibold"
                   />
                 </div>
@@ -392,89 +473,134 @@ export const PurchaseVoucherScreen: React.FC<PurchaseVoucherScreenProps> = ({
                   </label>
                   <input
                     type="number"
-                    placeholder="e.g. 22"
+                    min="0"
+                    step="any"
+                    placeholder="Pcs per Packet"
                     value={pcsPerPacket}
-                    onChange={(e) => setPcsPerPacket(e.target.value)}
+                    onChange={(e) => handlePcsPerPacketChange(e.target.value)}
                     className="w-full px-2.5 py-1.5 text-xs bg-white border border-emerald-300 rounded-lg focus:outline-none focus:border-[#0F4D32] font-mono font-semibold"
                   />
                 </div>
               </div>
 
-              {/* Auto Calculated Total Quantity */}
-              <div className="flex items-center justify-between text-xs bg-white/80 px-2.5 py-1.5 rounded-lg border border-emerald-200">
-                <span className="text-slate-600">Total Quantity:</span>
-                <span className="font-mono font-bold text-[#0F4D32]">
-                  {quantity} Pcs ({packetsCount || 0} pkt × {pcsPerPacket || 0} pcs)
-                </span>
+              {/* Total Pcs (Auto-calculated or manually fillable) */}
+              <div>
+                <label className="text-[10px] text-slate-600 font-semibold block mb-0.5">
+                  Total Pieces (Pcs)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  placeholder="Total Pcs"
+                  value={quantityPcs}
+                  onChange={(e) => handleQuantityPcsChange(e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs bg-white border border-emerald-300 rounded-lg focus:outline-none focus:border-[#0F4D32] font-mono font-bold text-[#0F4D32]"
+                />
               </div>
 
-              {/* Cost & Selling Rate */}
-              <div className="grid grid-cols-2 gap-2">
+              {/* Dual Cost: Cost per Packet & Cost per Piece */}
+              <div className="grid grid-cols-2 gap-2 pt-1 border-t border-emerald-200/50">
                 <div>
                   <label className="text-[10px] text-slate-600 font-semibold block mb-0.5">
-                    Cost (₹ per Packet)
+                    Cost per Packet (₹)
                   </label>
                   <input
                     type="number"
-                    placeholder="e.g. 176"
-                    value={costInput}
-                    onChange={(e) => setCostInput(e.target.value)}
+                    min="0"
+                    step="any"
+                    placeholder="Rate per Packet"
+                    value={costPerPacket}
+                    onChange={(e) => handleCostPerPacketChange(e.target.value)}
                     className="w-full px-2.5 py-1.5 text-xs bg-white border border-emerald-300 rounded-lg focus:outline-none focus:border-[#0F4D32] font-mono font-bold"
                   />
                 </div>
                 <div>
                   <label className="text-[10px] text-slate-600 font-semibold block mb-0.5">
-                    Selling Rate (₹ per Pc) *
+                    Cost per Pc (₹)
                   </label>
                   <input
                     type="number"
-                    placeholder="e.g. 10"
-                    value={sellingRate}
-                    onChange={(e) => setSellingRate(e.target.value)}
-                    className="w-full px-2.5 py-1.5 text-xs bg-white border border-emerald-300 rounded-lg focus:outline-none focus:border-[#0F4D32] font-mono font-bold text-emerald-800"
+                    min="0"
+                    step="any"
+                    placeholder="Rate per Piece"
+                    value={costPerPc}
+                    onChange={(e) => handleCostPerPcChange(e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs bg-white border border-emerald-300 rounded-lg focus:outline-none focus:border-[#0F4D32] font-mono font-bold"
                   />
                 </div>
               </div>
 
-              {/* Live Purchase Calculation Summary */}
-              {parseFloat(packetsCount) > 0 && parseFloat(costInput) > 0 && (
+              {/* Compulsory Selling Rate per Pc */}
+              <div>
+                <label className="text-[10px] text-emerald-800 font-bold block mb-0.5">
+                  Selling Rate (₹ per Pc) * (Compulsory)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  placeholder="Selling Rate per Pc"
+                  value={sellingRate}
+                  onChange={(e) => setSellingRate(e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs bg-white border border-emerald-400 rounded-lg focus:outline-none focus:border-[#0F4D32] font-mono font-bold text-emerald-900"
+                />
+              </div>
+
+              {/* Calculation Summary */}
+              {((parseFloat(packetsCount) > 0 && parseFloat(costPerPacket) > 0) ||
+                (parseFloat(quantityPcs) > 0 && parseFloat(costPerPc) > 0)) && (
                 <div className="text-[11px] text-slate-600 pt-1 border-t border-emerald-200/60 flex items-center justify-between">
                   <span>
-                    Total Cost: ₹{costInput} × {packetsCount} pkt
+                    Total Cost:
+                    {parseFloat(packetsCount) > 0 && parseFloat(costPerPacket) > 0
+                      ? ` ₹${costPerPacket} × ${packetsCount} pkt`
+                      : ` ₹${costPerPc} × ${quantityPcs} pcs`}
                   </span>
                   <span className="font-bold text-[#0F4D32]">
-                    = ₹{(parseFloat(costInput) * parseFloat(packetsCount)).toFixed(2)}
+                    = ₹
+                    {(parseFloat(packetsCount) > 0 && parseFloat(costPerPacket) > 0
+                      ? parseFloat(costPerPacket) * parseFloat(packetsCount)
+                      : (parseFloat(quantityPcs) || 0) * (parseFloat(costPerPc) || 0)
+                    ).toFixed(2)}
                   </span>
                 </div>
               )}
             </div>
           ) : (
-            /* Direct Quantity & Cost Mode (for kg, ltr, or direct pcs) */
+            /* Direct Quantity & Cost Mode (for kg, ltr) */
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <label className="text-[10px] text-slate-500 font-semibold mb-0.5 block">Quantity</label>
+                <label className="text-[10px] text-slate-500 font-semibold mb-0.5 block">Quantity ({unit})</label>
                 <input
                   type="number"
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
+                  min="0"
+                  step="any"
+                  placeholder="Quantity"
+                  value={quantityPcs}
+                  onChange={(e) => setQuantityPcs(e.target.value)}
                   className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-[#0F4D32] font-mono"
                 />
               </div>
               <div>
-                <label className="text-[10px] text-slate-500 font-semibold mb-0.5 block">Cost (₹)</label>
+                <label className="text-[10px] text-slate-500 font-semibold mb-0.5 block">Cost (₹/{unit})</label>
                 <input
                   type="number"
-                  placeholder="Rate"
-                  value={costInput}
-                  onChange={(e) => setCostInput(e.target.value)}
+                  min="0"
+                  step="any"
+                  placeholder="Cost Rate"
+                  value={costPerPc}
+                  onChange={(e) => setCostPerPc(e.target.value)}
                   className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-[#0F4D32] font-mono"
                 />
               </div>
               <div>
-                <label className="text-[10px] text-slate-500 font-semibold mb-0.5 block">Selling Rate (₹)</label>
+                <label className="text-[10px] text-slate-500 font-semibold mb-0.5 block">Selling Rate (₹/{unit}) *</label>
                 <input
                   type="number"
-                  placeholder="Sell Rate"
+                  min="0"
+                  step="any"
+                  placeholder="Selling Rate"
                   value={sellingRate}
                   onChange={(e) => setSellingRate(e.target.value)}
                   className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-[#0F4D32] font-mono font-bold text-emerald-800"

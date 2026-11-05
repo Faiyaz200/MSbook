@@ -490,7 +490,7 @@ export const VoucherDetailPlaceholderScreen: React.FC<VoucherDetailPlaceholderSc
                 onChange={(e) => setRefundMode(e.target.value as any)}
                 className="w-full text-xs p-2.5 rounded-xl border border-slate-300 bg-white font-medium text-slate-800 focus:outline-none focus:border-[#0F4D32]"
               >
-                <option value="UDHAR_REDUCTION">Reduce Customer Udhar / Outstanding Balance</option>
+                <option value="UDHAR_REDUCTION">Reduce Customer Credit / Outstanding Balance</option>
                 <option value="CASH">Refund Cash Immediately</option>
                 <option value="BANK">Refund via Bank / UPI</option>
               </select>

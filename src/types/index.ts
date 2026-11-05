@@ -193,7 +193,7 @@ export const VOUCHERS: Record<VoucherType, VoucherMeta> = {
   SPLIT_PAYMENT: {
     type: 'SPLIT_PAYMENT',
     title: 'Split Payment',
-    subtitle: 'Multi-Mode Cash/UPI/Udhar',
+    subtitle: 'Multi-Mode Cash/UPI/Credit',
     defaultPrefix: 'SPL',
     isPrimary: true,
     category: 'Main',

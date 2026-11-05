@@ -21,7 +21,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentTab, onSelectTab })
   ];
 
   return (
-    <div className="h-[60px] bg-white border-t border-slate-200 flex items-center justify-around px-2 select-none shrink-0 shadow-xs z-20 pb-[env(safe-area-inset-bottom)]">
+    <div className="min-h-[58px] bg-white border-t border-slate-200 flex items-center justify-around px-2 select-none shrink-0 shadow-xs z-20 pb-[max(env(safe-area-inset-bottom),4px)]">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isSelected = currentTab === tab.key;

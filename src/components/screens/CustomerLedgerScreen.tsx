@@ -154,7 +154,7 @@ export const CustomerLedgerScreen: React.FC<CustomerLedgerScreenProps> = ({
           </button>
           <div className="ml-1">
             <h2 className="font-bold text-slate-900 text-sm leading-tight">Customer Ledger</h2>
-            <span className="text-[10px] text-slate-400">Account Statements & Udhar</span>
+            <span className="text-[10px] text-slate-400">Account Statements & Credit</span>
           </div>
         </div>
 
@@ -179,7 +179,7 @@ export const CustomerLedgerScreen: React.FC<CustomerLedgerScreenProps> = ({
               No customers added yet.
             </h3>
             <p className="text-xs text-slate-500 mt-1 max-w-[240px] leading-relaxed">
-              Add customers to track their purchases, Udhar balances, and payment receipts.
+              Add customers to track their purchases, credit balances, and payment receipts.
             </p>
             <button
               onClick={openAddForm}

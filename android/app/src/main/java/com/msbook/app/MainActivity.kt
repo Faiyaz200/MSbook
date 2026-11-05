@@ -77,6 +77,7 @@ class MainActivity : AppCompatActivity() {
         settings.displayZoomControls = false
         settings.useWideViewPort = true
         settings.loadWithOverviewMode = true
+        settings.textZoom = 100
         settings.cacheMode = WebSettings.LOAD_DEFAULT
         settings.mediaPlaybackRequiresUserGesture = false
 

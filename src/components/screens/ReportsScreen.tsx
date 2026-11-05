@@ -122,7 +122,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight leading-none text-white">
-                Reports & Khata
+                Reports & Statements
               </h1>
               <p className="text-[11px] text-emerald-100 font-medium mt-1 truncate max-w-[200px]">
                 {activeBusiness.businessName}
@@ -131,7 +131,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
           </div>
 
           <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-white/15 text-white text-[11px] font-semibold border border-white/20">
-            <span>Audit & P&L</span>
+            <span>Financial Reports</span>
           </div>
         </div>
       </div>
@@ -139,7 +139,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
 
-        {/* 1. Net Profit / Munafa Summary Card */}
+        {/* 1. Net Profit Summary Card */}
         <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -147,7 +147,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                 <TrendingUp className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-xs font-bold text-slate-900">Profit & Loss (Munafa)</h3>
+                <h3 className="text-xs font-bold text-slate-900">Profit & Loss Statement</h3>
                 <span className="text-[10px] text-slate-400">Total Business Performance</span>
               </div>
             </div>
@@ -177,7 +177,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
               </span>
             </div>
             <div className="bg-[#F2F8F4] border border-emerald-200 rounded-xl p-2.5">
-              <span className="text-[10px] text-[#0F4D32] font-bold block">Net Munafa</span>
+              <span className="text-[10px] text-[#0F4D32] font-bold block">Net Profit</span>
               <span
                 className={`font-mono text-xs font-black block mt-0.5 ${
                   financials.netProfit >= 0 ? 'text-[#0F4D32]' : 'text-red-600'
@@ -189,7 +189,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
           </div>
         </div>
 
-        {/* 2. Customer Udhari List (Khata) */}
+        {/* 2. Customer Receivables List */}
         <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -197,13 +197,13 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                 <Users className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-xs font-bold text-slate-900">Customer Udhari (Khata)</h3>
-                <span className="text-[10px] text-slate-400">Market se lena baki</span>
+                <h3 className="text-xs font-bold text-slate-900">Customer Receivables</h3>
+                <span className="text-[10px] text-slate-400">Outstanding customer balances</span>
               </div>
             </div>
 
             <div className="text-right">
-              <span className="text-[10px] text-slate-500 block">Total Udhar</span>
+              <span className="text-[10px] text-slate-500 block">Total Outstanding</span>
               <span className="font-mono text-sm font-black text-amber-800">
                 ₹{financials.totalCustomerUdhar.toLocaleString('en-IN', { maximumFractionDigits: 1 })}
               </span>
@@ -225,7 +225,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
           {/* Customer Rows */}
           {customerBalances.length === 0 ? (
             <div className="p-4 text-center text-xs text-slate-400 bg-[#F8FAF8] rounded-xl">
-              Kisi bhi customer ka udhar baki nahi hai. All cleared!
+              No outstanding customer balances. All accounts cleared!
             </div>
           ) : filteredUdhari.length === 0 ? (
             <div className="p-4 text-center text-xs text-slate-400">
@@ -243,9 +243,9 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
 
                 const whatsappUrl = customer.mobileNumber
                   ? `https://wa.me/91${customer.mobileNumber.replace(/\D/g, '')}?text=${encodeURIComponent(
-                      `Namaste ${customer.name} ji, aapka MSbook me kul udhar ₹${balance.toFixed(
+                      `Hello ${customer.name}, your total outstanding balance at MSbook is ₹${balance.toFixed(
                         1
-                      )} baki hai. Kripya payment karein. Dhanyawad!`
+                      )}. Please settle payment at your earliest convenience. Thank you!`
                     )}`
                   : null;
 
@@ -267,7 +267,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                         <span className="font-mono text-xs font-black text-amber-800 block">
                           ₹{balance.toLocaleString('en-IN', { maximumFractionDigits: 1 })}
                         </span>
-                        <span className="text-[9px] text-amber-700 font-semibold">Udhar Due</span>
+                        <span className="text-[9px] text-amber-700 font-semibold">Due</span>
                       </div>
 
                       {/* WhatsApp Reminder Button */}

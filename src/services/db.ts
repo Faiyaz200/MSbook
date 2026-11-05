@@ -1174,7 +1174,7 @@ class RoomDatabaseSimulator {
     }
 
     if (udharAmount > 0 && !customer) {
-      throw new Error('Customer selection is required when sale has Udhar (credit balance)');
+      throw new Error('Customer selection is required when sale has credit balance');
     }
 
     const voucherId = 'vch_' + Math.random().toString(36).substring(2, 9);
@@ -1320,7 +1320,7 @@ class RoomDatabaseSimulator {
         debit: udharAmount,
         credit: 0,
         date: now,
-        narration: `Udhar sale on ${voucherNumber} to ${customer.name}`,
+        narration: `Credit sale on ${voucherNumber} to ${customer.name}`,
       });
     }
 
@@ -2703,7 +2703,7 @@ class RoomDatabaseSimulator {
         const vouchers = this.getVouchers(businessId).filter(
           (v) => v.voucherType === 'SALES' || v.voucherType === 'SPLIT_PAYMENT'
         );
-        const headers = ['Invoice #', 'Date', 'Customer', 'Total Bill', 'Cash', 'UPI', 'Bank', 'Udhar', 'Remarks'];
+        const headers = ['Invoice #', 'Date', 'Customer', 'Total Bill', 'Cash', 'UPI', 'Bank', 'Credit', 'Remarks'];
         const rows = vouchers.map((v) => [
           escapeCsv(v.voucherNumber),
           escapeCsv(new Date(v.date).toISOString().split('T')[0]),

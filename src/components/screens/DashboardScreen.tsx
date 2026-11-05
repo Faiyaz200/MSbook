@@ -214,7 +214,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </div>
           </div>
 
-          {/* Outstanding Udhar / Payables Grid */}
+          {/* Outstanding Credit / Payables Grid */}
           <div className="grid grid-cols-2 gap-2.5">
             <div className="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-xs">
               <div className="flex items-center justify-between">

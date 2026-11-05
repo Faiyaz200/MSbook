@@ -613,7 +613,7 @@ fun SalesVoucherScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).padding(16.dp)) {
-            Text("Invoice Details, Product Selection, and Flexible Cash/UPI/Bank/Udhar Split Payment")
+            Text("Invoice Details, Product Selection, and Flexible Cash/UPI/Bank/Credit Split Payment")
         }
     }
 }`,

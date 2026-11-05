@@ -228,7 +228,7 @@ const ALL_SYSTEM_TESTS: TestResult[] = [
     title: 'Credit Note: Sales Returns & Customer Receivable Reversal',
     category: 'Credit Notes',
     status: 'PENDING',
-    detail: 'Verifies sales returns reverse revenue, reduce customer udhar or disburse refund, and restore product stock.',
+    detail: 'Verifies sales returns reverse revenue, reduce customer credit or disburse refund, and restore product stock.',
   },
   {
     id: 29,
@@ -377,7 +377,7 @@ export const TestSuiteModal: React.FC<TestSuiteModalProps> = ({
         saleV.totalAmount === 1000 &&
         postSaleCash.closingBalance === 300 &&
         postSaleUpi.closingBalance === 200 &&
-        postSaleCust.totalOutstanding === 1000; // 500 opening + 500 udhar
+        postSaleCust.totalOutstanding === 1000; // 500 opening + 500 credit
       updated[4].status = saleLedgerValid ? 'PASSED' : 'FAILED';
 
       // Test 6: Receipt Voucher Reduces Customer Due

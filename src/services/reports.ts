@@ -408,7 +408,7 @@ export function calculateDayBook(
     if (cash > 0) modes.push(`Cash ₹${cash}`);
     if (upi > 0) modes.push(`UPI ₹${upi}`);
     if (bank > 0) modes.push(`Bank ₹${bank}`);
-    if (udhar > 0) modes.push(`Udhar ₹${udhar}`);
+    if (udhar > 0) modes.push(`Credit ₹${udhar}`);
     paymentMode = modes.length > 0 ? modes.join(' + ') : 'Credit';
 
     if (v.voucherType === 'SALES' || v.voucherType === 'SPLIT_PAYMENT') {
@@ -823,8 +823,8 @@ export function calculateSalesReport(
     if (v.cashAmount > 0) modes.push('Cash');
     if (v.upiAmount > 0) modes.push('UPI');
     if (v.bankAmount > 0) modes.push('Bank');
-    if (v.udharAmount > 0) modes.push('Udhar');
-    const paymentMode = modes.length > 0 ? modes.join(' + ') : 'Full Udhar';
+    if (v.udharAmount > 0) modes.push('Credit');
+    const paymentMode = modes.length > 0 ? modes.join(' + ') : 'Credit';
 
     return {
       voucherId: v.id,

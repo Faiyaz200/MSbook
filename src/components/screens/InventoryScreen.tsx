@@ -85,7 +85,7 @@ export const InventoryScreen: React.FC<InventoryScreenProps> = ({
           </div>
 
           <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-white/15 text-white text-[11px] font-semibold border border-white/20">
-            <span>Piche Bacha Maal</span>
+            <span>Available Inventory</span>
           </div>
         </div>
       </div>
@@ -115,7 +115,7 @@ export const InventoryScreen: React.FC<InventoryScreenProps> = ({
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
             <input
               type="text"
-              placeholder="Search item name (e.g. Parle, Chawal, Tel)..."
+              placeholder="Search item name (e.g. Rice, Sugar, Oil)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-800 outline-none focus:border-[#0F4D32] shadow-2xs"
@@ -175,7 +175,7 @@ export const InventoryScreen: React.FC<InventoryScreenProps> = ({
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
               Stock Register ({filteredProducts.length})
             </h3>
-            <span className="text-[10px] text-slate-400">Piche bacha hua maal</span>
+            <span className="text-[10px] text-slate-400">Current stock balance</span>
           </div>
 
           {filteredProducts.length === 0 ? (
@@ -185,12 +185,12 @@ export const InventoryScreen: React.FC<InventoryScreenProps> = ({
               </div>
               <div>
                 <h4 className="font-bold text-slate-800 text-sm">
-                  {searchQuery ? 'No matching items found' : 'Inventory Khali Hai'}
+                  {searchQuery ? 'No matching items found' : 'Inventory is Empty'}
                 </h4>
                 <p className="text-xs text-slate-500 mt-1 max-w-[260px] mx-auto">
                   {searchQuery
                     ? 'Check spelling or clear search filter'
-                    : 'Purchase Voucher se maal daalein. Yaha automatic stock dikhega.'}
+                    : 'Add items via Purchase Voucher. Stock updates automatically here.'}
                 </p>
               </div>
 
@@ -201,7 +201,7 @@ export const InventoryScreen: React.FC<InventoryScreenProps> = ({
                   className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-[#0F4D32] text-white text-xs font-bold hover:bg-[#0B3B26] shadow-sm transition-colors"
                 >
                   <ShoppingCart className="w-4 h-4" />
-                  <span>Purchase Voucher Kholein</span>
+                  <span>Open Purchase Voucher</span>
                 </button>
               )}
             </div>

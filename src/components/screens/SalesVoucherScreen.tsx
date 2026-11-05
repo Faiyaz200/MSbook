@@ -269,7 +269,7 @@ export const SalesVoucherScreen: React.FC<SalesVoucherScreenProps> = ({
 
     const selectedCust = customers.find((c) => c.id === selectedCustomerId) || null;
     if (numUdhar > 0 && !selectedCust) {
-      setErrorMessage('Please select a customer for Udhar (Credit) balance');
+      setErrorMessage('Please select a customer for Credit balance');
       return;
     }
 
@@ -378,7 +378,7 @@ export const SalesVoucherScreen: React.FC<SalesVoucherScreenProps> = ({
             </select>
           ) : (
             <div className="text-[11px] text-slate-500 py-1">
-              No customers saved. Default: Cash customer. Tap "+ New Customer" to record Udhar.
+              No customers saved. Default: Cash customer. Tap "+ New Customer" to record Credit.
             </div>
           )}
 
@@ -436,9 +436,9 @@ export const SalesVoucherScreen: React.FC<SalesVoucherScreenProps> = ({
 
           {inStockProducts.length === 0 ? (
             <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-center space-y-1">
-              <p className="text-xs font-bold text-amber-800">Inventory me mal nahi he!</p>
+              <p className="text-xs font-bold text-amber-800">Inventory is out of stock!</p>
               <p className="text-[11px] text-amber-700">
-                Pehle "Purchase Voucher" se stock daalein (jaise Pandarpuri, Rice, etc.). Mal hoga tabhi bill banega.
+                Please add stock via "Purchase Voucher" first to start billing items.
               </p>
             </div>
           ) : (
@@ -577,7 +577,7 @@ export const SalesVoucherScreen: React.FC<SalesVoucherScreenProps> = ({
                 onClick={handleSetFullUdhar}
                 className="py-1 px-2 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 text-[11px] font-bold border border-amber-200 transition-colors"
               >
-                Full Udhar
+                Full Credit
               </button>
             </div>
 
@@ -620,7 +620,7 @@ export const SalesVoucherScreen: React.FC<SalesVoucherScreenProps> = ({
               </div>
 
               <div className="space-y-1">
-                <label className="font-semibold text-amber-700">Udhar / Credit (₹)</label>
+                <label className="font-semibold text-amber-700">Credit / Due (₹)</label>
                 <input
                   type="number"
                   step="any"
