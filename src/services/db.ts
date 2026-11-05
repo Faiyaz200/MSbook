@@ -809,7 +809,7 @@ class RoomDatabaseSimulator {
     return newProd;
   }
 
-  updateProduct(id: string, updates: Partial<Product>): Product {
+  updateProduct(id: string, updates: Partial<Product>, auditNote?: string): Product {
     const all = this.getAllProductsRaw();
     const idx = all.findIndex((p) => p.id === id);
     if (idx === -1) {
@@ -822,11 +822,21 @@ class RoomDatabaseSimulator {
       newStock = updates.variants.reduce((sum, v) => sum + (Number(v.stockQuantity) || 0), 0);
     }
 
+    const history = existing.editHistory ? [...existing.editHistory] : [];
+    if (auditNote) {
+      history.unshift({
+        editedAt: Date.now(),
+        note: auditNote,
+      });
+    }
+
     const updated: Product = {
       ...existing,
       ...updates,
       stockQuantity: newStock,
       updatedAt: Date.now(),
+      editNote: auditNote || updates.editNote || existing.editNote,
+      editHistory: history,
     };
 
     all[idx] = updated;

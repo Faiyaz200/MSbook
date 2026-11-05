@@ -108,6 +108,11 @@ export interface Product {
   variants?: ProductVariant[];
   createdAt: number;
   updatedAt?: number;
+  editNote?: string;
+  editHistory?: Array<{
+    editedAt: number;
+    note: string;
+  }>;
 }
 
 export type StockMovementType = 'IN' | 'OUT' | 'ADJUSTMENT' | 'SALE' | 'PURCHASE' | 'OPENING';
