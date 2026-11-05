@@ -37,6 +37,7 @@ import { SimplePlaceholderScreen } from './components/screens/SimplePlaceholderS
 import { BusinessSwitchScreen } from './components/screens/BusinessSwitchScreen';
 import { TestSuiteModal } from './components/TestSuiteModal';
 import { CodeViewerModal } from './components/CodeViewerModal';
+import { WelcomeSplashScreen } from './components/WelcomeSplashScreen';
 
 export default function App() {
   const [businesses, setBusinesses] = useState<Business[]>([]);
@@ -45,6 +46,7 @@ export default function App() {
   const [isTestModalOpen, setIsTestModalOpen] = useState<boolean>(false);
   const [isCodeModalOpen, setIsCodeModalOpen] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [showWelcomeSplash, setShowWelcomeSplash] = useState<boolean>(true);
 
   // Navigation Back-Stack mimicking Android NavHost Controller
   const [screenStack, setScreenStack] = useState<ScreenState[]>(() => {
@@ -552,6 +554,14 @@ export default function App() {
         isOpen={isCodeModalOpen}
         onClose={() => setIsCodeModalOpen(false)}
       />
+
+      {/* Animated Welcome Splash on App Startup */}
+      {showWelcomeSplash && (
+        <WelcomeSplashScreen
+          durationMs={2500}
+          onFinish={() => setShowWelcomeSplash(false)}
+        />
+      )}
     </div>
   );
 }

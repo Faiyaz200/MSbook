@@ -1231,7 +1231,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   <h3 className="font-black text-base text-slate-900">MSbook Android</h3>
                   <p className="text-xs text-slate-500">Native Jetpack Compose Accounting</p>
                   <span className="inline-block mt-0.5 px-2 py-0.5 rounded bg-emerald-100 text-[#0F4D32] font-bold text-[10px]">
-                    v1.0.0 (Stage 5 Architecture)
+                    v5.8.9 (Release Build)
                   </span>
                 </div>
               </div>
