@@ -106,13 +106,10 @@ export const SalesVoucherScreen: React.FC<SalesVoucherScreenProps> = ({
 
   const isBalanced = validRows.length > 0 && Math.abs(grandTotal - totalAllocated) < 0.05;
 
-  // Auto-fill cash when total changes if only 1 item or default
+  // Auto-sync cash with grandTotal when paying cash
   useEffect(() => {
-    if (grandTotal > 0 && totalAllocated === 0) {
+    if (numUpi === 0 && numBank === 0 && numUdhar === 0) {
       setCashAmount(grandTotal.toString());
-      setUpiAmount('0');
-      setBankAmount('0');
-      setUdharAmount('0');
     }
   }, [grandTotal]);
 
@@ -124,6 +121,21 @@ export const SalesVoucherScreen: React.FC<SalesVoucherScreenProps> = ({
       const copy = [...prev];
       const targetIndex = activeRowIndexForPicker;
 
+      // Check if product is already in another row - prevent duplicate rows of the same item!
+      const existingIndex = copy.findIndex(
+        (r, idx) => idx !== targetIndex && r.productId === prod.id
+      );
+
+      if (existingIndex !== -1) {
+        // Product already in bill! Increment quantity on the existing row
+        copy[existingIndex].quantity = (copy[existingIndex].quantity || 0) + 1;
+        // If current target row was empty and there are other rows, remove it
+        if (!copy[targetIndex].productId && copy.length > 1) {
+          copy.splice(targetIndex, 1);
+        }
+        return copy;
+      }
+
       copy[targetIndex] = {
         ...copy[targetIndex],
         productId: prod.id,
@@ -134,20 +146,6 @@ export const SalesVoucherScreen: React.FC<SalesVoucherScreenProps> = ({
         stockAvailable: prod.stockQuantity || 0,
         quantity: 1,
       };
-
-      // Auto-append next empty row if this was the last row
-      if (targetIndex === copy.length - 1) {
-        copy.push({
-          rowId: 'row_' + Math.random().toString(36).substring(2, 7),
-          productId: '',
-          productName: '',
-          quantity: 1,
-          unit: 'pcs',
-          sellingPrice: 0,
-          purchaseCost: 0,
-          stockAvailable: 0,
-        });
-      }
 
       return copy;
     });
@@ -163,29 +161,14 @@ export const SalesVoucherScreen: React.FC<SalesVoucherScreenProps> = ({
     setRows((prev) => {
       const copy = [...prev];
       copy[index].quantity = qty;
-
-      // If user filled quantity and it's the last row with product selected, add next empty row
-      if (index === copy.length - 1 && copy[index].productId && qty > 0) {
-        copy.push({
-          rowId: 'row_' + Math.random().toString(36).substring(2, 7),
-          productId: '',
-          productName: '',
-          quantity: 1,
-          unit: 'pcs',
-          sellingPrice: 0,
-          purchaseCost: 0,
-          stockAvailable: 0,
-        });
-      }
-
       return copy;
     });
   };
 
   const handleDeleteRow = (index: number) => {
     setRows((prev) => {
-      if (prev.length <= 1) {
-        // Keep at least one empty row
+      const next = prev.filter((_, i) => i !== index);
+      if (next.length === 0) {
         return [
           {
             rowId: 'row_' + Math.random().toString(36).substring(2, 7),
@@ -199,8 +182,27 @@ export const SalesVoucherScreen: React.FC<SalesVoucherScreenProps> = ({
           },
         ];
       }
-      return prev.filter((_, i) => i !== index);
+      return next;
     });
+  };
+
+  const handleAddRow = () => {
+    const nextIndex = rows.length;
+    setRows((prev) => [
+      ...prev,
+      {
+        rowId: 'row_' + Math.random().toString(36).substring(2, 7),
+        productId: '',
+        productName: '',
+        quantity: 1,
+        unit: 'pcs',
+        sellingPrice: 0,
+        purchaseCost: 0,
+        stockAvailable: 0,
+      },
+    ]);
+    setActiveRowIndexForPicker(nextIndex);
+    setIsProductPickerOpen(true);
   };
 
   // Quick 1-tap payment allocation helpers
@@ -461,7 +463,7 @@ export const SalesVoucherScreen: React.FC<SalesVoucherScreenProps> = ({
                       <span className="text-[10px] font-bold text-slate-400 uppercase">
                         Item #{idx + 1}
                       </span>
-                      {rows.length > 1 && (
+                      {(isItemChosen || rows.length > 1) && (
                         <button
                           type="button"
                           onClick={() => handleDeleteRow(idx)}
@@ -544,6 +546,18 @@ export const SalesVoucherScreen: React.FC<SalesVoucherScreenProps> = ({
                   </div>
                 );
               })}
+
+              {/* Add Another Item Button */}
+              {validRows.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleAddRow}
+                  className="w-full py-2.5 rounded-xl border border-dashed border-[#0F4D32]/40 bg-[#F2F8F4]/40 hover:bg-[#F2F8F4] text-[#0F4D32] text-xs font-bold flex items-center justify-center space-x-1.5 transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Another Item</span>
+                </button>
+              )}
             </div>
           )}
         </div>
