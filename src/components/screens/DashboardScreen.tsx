@@ -3,7 +3,6 @@ import {
   ArrowLeftRight,
   PlusCircle,
   ShoppingBag,
-  Shirt,
   User,
   Phone,
   MapPin,
@@ -12,15 +11,15 @@ import {
   Receipt,
   ShoppingCart,
   ArrowDownLeft,
-  ArrowUpRight,
-  BookOpen,
-  IndianRupee,
   Clock,
-  TrendingUp,
   Package,
   Settings,
+  X,
+  FileText,
+  ChevronRight,
+  ExternalLink,
 } from 'lucide-react';
-import { Business, BUSINESS_TYPES, BusinessFinancialSummary, Voucher } from '../../types';
+import { Business, BUSINESS_TYPES, BusinessFinancialSummary, Voucher, VoucherItem } from '../../types';
 import { db } from '../../services/db';
 
 interface DashboardScreenProps {
@@ -35,6 +34,10 @@ interface DashboardScreenProps {
   onNavigateToSettings?: () => void;
 }
 
+interface VoucherWithItems extends Voucher {
+  items: VoucherItem[];
+}
+
 export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   activeBusiness,
   onNavigateToSwitcher,
@@ -42,7 +45,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   onNavigateToSales,
   onNavigateToPurchase,
   onNavigateToReceipt,
-  onNavigateToPayment,
   onNavigateToInventory,
   onNavigateToSettings,
 }) => {
@@ -61,13 +63,18 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     stockValue: 0,
   });
 
-  const [recentVouchers, setRecentVouchers] = useState<Voucher[]>([]);
+  const [recentVouchers, setRecentVouchers] = useState<VoucherWithItems[]>([]);
+  const [selectedVoucherModal, setSelectedVoucherModal] = useState<VoucherWithItems | null>(null);
 
   const loadData = () => {
     const fin = db.getBusinessFinancialSummary(activeBusiness.id);
     setSummary(fin);
-    const list = db.getVouchers(activeBusiness.id).slice(0, 5);
-    setRecentVouchers(list);
+    const list = db.getVouchers(activeBusiness.id).slice(0, 10);
+    const withItems: VoucherWithItems[] = list.map((v) => ({
+      ...v,
+      items: db.getVoucherItems(v.id),
+    }));
+    setRecentVouchers(withItems);
   };
 
   useEffect(() => {
@@ -179,7 +186,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           </div>
         </div>
 
-        {/* Financial Summary Cards (100% Real DB records, default ₹0 for clean business) */}
+        {/* Financial Summary Cards */}
         <div className="space-y-2.5">
           <div className="flex items-center justify-between px-1">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
@@ -339,7 +346,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           </div>
         </div>
 
-        {/* Recent Transactions (Zero fake records) */}
+        {/* Recent Transactions with Complete Item-by-Item Details */}
         <div className="space-y-2">
           <div className="flex items-center justify-between px-1">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
@@ -365,30 +372,143 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               </div>
             ) : (
               <div className="divide-y divide-slate-100">
-                {recentVouchers.map((v) => (
-                  <div key={v.id} className="p-3.5 flex items-center justify-between text-xs">
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-bold text-slate-900">{v.voucherNumber}</span>
-                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-700">
-                          {v.voucherType}
+                {recentVouchers.map((v) => {
+                  const isSale = v.voucherType === 'SALES' || v.voucherType === 'SPLIT_PAYMENT';
+                  const isPurchase = v.voucherType === 'PURCHASE';
+                  const hasItems = v.items && v.items.length > 0;
+
+                  return (
+                    <div
+                      key={v.id}
+                      onClick={() => setSelectedVoucherModal(v)}
+                      className="p-3.5 space-y-2.5 hover:bg-[#F2F8F4]/30 active:bg-[#F2F8F4]/60 transition-colors cursor-pointer"
+                    >
+                      {/* Top Header of Voucher */}
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-0.5 flex-1 min-w-0 pr-2">
+                          <div className="flex items-center space-x-1.5 flex-wrap">
+                            <span className="font-bold text-slate-900 text-xs">
+                              {v.voucherNumber}
+                            </span>
+                            <span
+                              className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider ${
+                                isSale
+                                  ? 'bg-emerald-100 text-[#0F4D32]'
+                                  : isPurchase
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-amber-100 text-amber-800'
+                              }`}
+                            >
+                              {v.voucherType}
+                            </span>
+                          </div>
+
+                          <p className="text-[11px] font-semibold text-slate-700 truncate">
+                            {v.partyName || (isSale ? 'Walk-in Customer' : 'Direct Transaction')}
+                          </p>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <span
+                            className={`font-mono font-black text-sm block ${
+                              isSale ? 'text-[#0F4D32]' : isPurchase ? 'text-blue-900' : 'text-slate-900'
+                            }`}
+                          >
+                            ₹{v.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}
+                          </span>
+                          <span className="text-[10px] text-slate-400">
+                            {new Date(v.date).toLocaleDateString('en-IN', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: true,
+                            })}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Items Detailed Breakdown ("Konsi item kitni kitne me gay") */}
+                      {hasItems ? (
+                        <div className="bg-[#F8FAF8] border border-slate-200/90 rounded-xl p-2.5 space-y-1.5">
+                          <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wide border-b border-slate-200/60 pb-1">
+                            <span>Item Name</span>
+                            <span>Qty × Rate = Amount</span>
+                          </div>
+
+                          <div className="space-y-1">
+                            {v.items.map((it, idx) => {
+                              const unitRate = it.sellingPrice > 0 ? it.sellingPrice : (it.purchaseCostAtSale > 0 ? it.purchaseCostAtSale : 0);
+                              const lineAmt = it.lineTotal > 0 ? it.lineTotal : it.quantity * unitRate;
+
+                              return (
+                                <div
+                                  key={it.id || idx}
+                                  className="flex items-center justify-between text-xs py-0.5"
+                                >
+                                  <div className="flex items-center space-x-1.5 min-w-0 flex-1 pr-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[#0F4D32] shrink-0" />
+                                    <span className="font-bold text-slate-900 truncate">
+                                      {it.productName}
+                                    </span>
+                                  </div>
+
+                                  <div className="text-right shrink-0 font-mono text-[11px] text-slate-700">
+                                    <span className="font-semibold text-slate-900">
+                                      {it.quantity} {it.unit || 'pcs'}
+                                    </span>
+                                    {unitRate > 0 && (
+                                      <span className="text-slate-500 ml-1">
+                                        × ₹{unitRate}
+                                      </span>
+                                    )}
+                                    <span className="font-black text-[#0F4D32] ml-1.5">
+                                      = ₹{lineAmt.toFixed(1)}
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-[11px] text-slate-500 italic bg-[#F8FAF8] p-2 rounded-xl border border-slate-100 flex items-center justify-between">
+                          <span>{v.remarks || 'Direct payment transaction'}</span>
+                          <span className="font-mono font-bold text-slate-700">₹{v.totalAmount}</span>
+                        </div>
+                      )}
+
+                      {/* Payment Mode Pills */}
+                      <div className="flex items-center space-x-1.5 flex-wrap gap-y-1 text-[10px] text-slate-500 pt-0.5">
+                        {v.cashAmount > 0 && (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-[#0F4D32] font-semibold border border-emerald-200">
+                            Cash: ₹{v.cashAmount}
+                          </span>
+                        )}
+                        {v.upiAmount > 0 && (
+                          <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-semibold border border-blue-200">
+                            UPI: ₹{v.upiAmount}
+                          </span>
+                        )}
+                        {v.bankAmount > 0 && (
+                          <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-semibold border border-indigo-200">
+                            Bank: ₹{v.bankAmount}
+                          </span>
+                        )}
+                        {v.udharAmount > 0 && (
+                          <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 font-semibold border border-amber-200">
+                            Credit / Udhar: ₹{v.udharAmount}
+                          </span>
+                        )}
+                        <span className="ml-auto text-[10px] text-slate-400 font-medium flex items-center">
+                          <span>Details</span>
+                          <ChevronRight className="w-3 h-3 ml-0.5" />
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
-                        {v.partyName || v.remarks || 'Direct Transaction'}
-                      </p>
                     </div>
-
-                    <div className="text-right">
-                      <span className="font-mono font-bold text-slate-900 block text-sm">
-                        ₹{v.totalAmount.toLocaleString('en-IN')}
-                      </span>
-                      <span className="text-[10px] text-slate-400">
-                        {new Date(v.date).toLocaleDateString('en-IN')}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -413,6 +533,151 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Full Transaction Bill Modal */}
+      {selectedVoucherModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-2xs flex flex-col justify-end sm:justify-center sm:items-center p-0 sm:p-4 animate-fade-in">
+          <div className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-slide-up">
+            {/* Modal Header */}
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-[#0F4D32] text-white shrink-0">
+              <div className="flex items-center space-x-2">
+                <FileText className="w-5 h-5 text-emerald-200" />
+                <div>
+                  <h3 className="font-bold text-sm">
+                    {selectedVoucherModal.voucherType} Voucher
+                  </h3>
+                  <p className="text-[10px] text-emerald-200">
+                    {selectedVoucherModal.voucherNumber}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedVoucherModal(null)}
+                className="p-1 rounded-full hover:bg-white/10 text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Voucher Body */}
+            <div className="p-4 overflow-y-auto space-y-3.5 flex-1">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100 text-xs">
+                <div>
+                  <span className="text-[10px] text-slate-400 uppercase font-bold block">Party / Customer</span>
+                  <span className="font-bold text-slate-800 text-sm">
+                    {selectedVoucherModal.partyName || 'Walk-in Cash Customer'}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] text-slate-400 uppercase font-bold block">Date & Time</span>
+                  <span className="font-medium text-slate-700">
+                    {new Date(selectedVoucherModal.date).toLocaleDateString('en-IN', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: true,
+                    })}
+                  </span>
+                </div>
+              </div>
+
+              {/* Items List */}
+              <div>
+                <span className="text-xs font-bold text-slate-800 block mb-1.5">
+                  Items Sold / Purchased ({selectedVoucherModal.items.length})
+                </span>
+
+                {selectedVoucherModal.items.length === 0 ? (
+                  <p className="text-xs text-slate-500 italic bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    {selectedVoucherModal.remarks || 'No individual product items attached.'}
+                  </p>
+                ) : (
+                  <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
+                    <div className="bg-slate-50 px-3 py-1.5 flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase">
+                      <span>Item Details</span>
+                      <span>Rate & Total</span>
+                    </div>
+
+                    {selectedVoucherModal.items.map((it, idx) => {
+                      const rate = it.sellingPrice > 0 ? it.sellingPrice : (it.purchaseCostAtSale > 0 ? it.purchaseCostAtSale : 0);
+                      const total = it.lineTotal > 0 ? it.lineTotal : it.quantity * rate;
+
+                      return (
+                        <div key={it.id || idx} className="p-2.5 flex items-center justify-between text-xs">
+                          <div>
+                            <span className="font-bold text-slate-900 block">{it.productName}</span>
+                            <span className="text-[11px] text-slate-500">
+                              Qty: {it.quantity} {it.unit || 'pcs'}
+                            </span>
+                          </div>
+
+                          <div className="text-right font-mono">
+                            {rate > 0 && (
+                              <span className="text-[11px] text-slate-500 block">
+                                @ ₹{rate}/{it.unit || 'pcs'}
+                              </span>
+                            )}
+                            <span className="font-bold text-[#0F4D32] text-sm">
+                              ₹{total.toFixed(1)}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Grand Total */}
+              <div className="p-3 bg-[#F2F8F4] border border-emerald-200 rounded-xl flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-700 uppercase">Total Bill Amount</span>
+                <span className="font-mono font-black text-lg text-[#0F4D32]">
+                  ₹{selectedVoucherModal.totalAmount.toFixed(1)}
+                </span>
+              </div>
+
+              {/* Payment Allocation */}
+              <div className="space-y-1.5 pt-1 text-xs">
+                <span className="text-[10px] font-bold text-slate-500 uppercase block">
+                  Payment Mode Settlement
+                </span>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-slate-50 border border-slate-200 p-2 rounded-lg flex items-center justify-between">
+                    <span className="text-slate-500">Cash:</span>
+                    <span className="font-mono font-bold text-slate-800">₹{selectedVoucherModal.cashAmount}</span>
+                  </div>
+                  <div className="bg-slate-50 border border-slate-200 p-2 rounded-lg flex items-center justify-between">
+                    <span className="text-slate-500">UPI / QR:</span>
+                    <span className="font-mono font-bold text-slate-800">₹{selectedVoucherModal.upiAmount}</span>
+                  </div>
+                  <div className="bg-slate-50 border border-slate-200 p-2 rounded-lg flex items-center justify-between">
+                    <span className="text-slate-500">Bank:</span>
+                    <span className="font-mono font-bold text-slate-800">₹{selectedVoucherModal.bankAmount}</span>
+                  </div>
+                  <div className="bg-slate-50 border border-slate-200 p-2 rounded-lg flex items-center justify-between">
+                    <span className="text-slate-500">Credit / Udhar:</span>
+                    <span className="font-mono font-bold text-amber-800">₹{selectedVoucherModal.udharAmount}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-3 border-t border-slate-100 bg-slate-50 text-right">
+              <button
+                type="button"
+                onClick={() => setSelectedVoucherModal(null)}
+                className="w-full py-2.5 bg-[#0F4D32] text-white text-xs font-bold rounded-xl hover:bg-[#0B3B26]"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

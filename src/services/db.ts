@@ -1111,7 +1111,30 @@ class RoomDatabaseSimulator {
   getVoucherItems(voucherId: string): VoucherItem[] {
     try {
       const all = this.getAllVoucherItemsRaw();
-      return all.filter((item) => item.voucherId === voucherId);
+      const direct = all.filter((item) => item.voucherId === voucherId);
+      if (direct.length > 0) return direct;
+
+      // Fallback: check Stock Movements for this voucher (legacy records)
+      const allMovements = this.getAllStockMovementsRaw();
+      const matched = allMovements.filter((sm) => sm.voucherId === voucherId);
+      if (matched.length > 0) {
+        return matched.map((sm) => ({
+          id: 'vi_sm_' + sm.id,
+          voucherId: sm.voucherId || voucherId,
+          businessId: sm.businessId,
+          productId: sm.productId,
+          productName: sm.productName,
+          quantity: sm.quantity,
+          unit: 'pcs',
+          variantInfo: sm.variantInfo || '',
+          sellingPrice: 0,
+          purchaseCostAtSale: 0,
+          discount: 0,
+          lineTotal: 0,
+        }));
+      }
+
+      return [];
     } catch {
       return [];
     }
@@ -1586,6 +1609,24 @@ class RoomDatabaseSimulator {
       }
     });
     localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(allProducts));
+
+    // Save purchase voucher items for complete transaction breakdown
+    const allVItems = this.getAllVoucherItemsRaw();
+    const purchaseVItems: VoucherItem[] = items.map((it) => ({
+      id: 'vi_' + Math.random().toString(36).substring(2, 9),
+      voucherId,
+      businessId,
+      productName: it.productName,
+      quantity: it.quantity,
+      unit: it.unit || 'pcs',
+      variantInfo: '',
+      sellingPrice: it.sellingPrice || 0,
+      purchaseCostAtSale: it.purchaseCost,
+      discount: 0,
+      lineTotal: it.quantity * it.purchaseCost,
+    }));
+    allVItems.push(...purchaseVItems);
+    localStorage.setItem(STORAGE_KEY_VOUCHER_ITEMS, JSON.stringify(allVItems));
 
     // Double Entry:
     // Debit Inventory Asset
