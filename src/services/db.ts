@@ -1222,7 +1222,12 @@ class RoomDatabaseSimulator {
     items.forEach((item) => {
       let prod = item.productId
         ? allProducts.find((p) => p.id === item.productId)
-        : allProducts.find((p) => p.businessId === businessId && p.name.toLowerCase() === item.productName.toLowerCase());
+        : allProducts.find(
+            (p) =>
+              p.businessId === businessId &&
+              p.name.trim().toLowerCase() === item.productName.trim().toLowerCase() &&
+              (item.sellingPrice ? Math.abs((p.sellingPrice || 0) - item.sellingPrice) < 0.01 : true)
+          );
 
       if (prod) {
         const prevStock = prod.stockQuantity;
@@ -1510,15 +1515,23 @@ class RoomDatabaseSimulator {
     // Increment or create products in local stock & log StockMovements
     const allProducts = this.getAllProductsRaw();
     items.forEach((it) => {
-      let prod = allProducts.find(
-        (p) => p.businessId === businessId && p.name.toLowerCase() === it.productName.toLowerCase()
-      );
+      const itSellingRate = it.sellingPrice && it.sellingPrice > 0 ? it.sellingPrice : 0;
+      // Match existing product in inventory: must match businessId, name, AND selling price.
+      // Items with identical names but different selling rates are saved as separate inventory products.
+      let prod = allProducts.find((p) => {
+        if (p.businessId !== businessId) return false;
+        if (p.name.trim().toLowerCase() !== it.productName.trim().toLowerCase()) return false;
+        if (itSellingRate > 0) {
+          return Math.abs((p.sellingPrice || 0) - itSellingRate) < 0.01;
+        }
+        return true;
+      });
       if (prod) {
         const prevStock = prod.stockQuantity;
         prod.stockQuantity += it.quantity;
         prod.purchaseCost = it.purchaseCost;
-        if (it.sellingPrice && it.sellingPrice > 0) {
-          prod.sellingPrice = it.sellingPrice;
+        if (itSellingRate > 0) {
+          prod.sellingPrice = itSellingRate;
         }
         this.recordStockMovement({
           businessId,
@@ -1536,10 +1549,10 @@ class RoomDatabaseSimulator {
         const newP: Product = {
           id: 'prod_' + Math.random().toString(36).substring(2, 9),
           businessId,
-          name: it.productName,
+          name: it.productName.trim(),
           barcode: '',
           unit: it.unit,
-          sellingPrice: it.sellingPrice && it.sellingPrice > 0 ? it.sellingPrice : it.purchaseCost * 1.25,
+          sellingPrice: itSellingRate > 0 ? itSellingRate : it.purchaseCost * 1.25,
           purchaseCost: it.purchaseCost,
           openingStock: 0,
           stockQuantity: it.quantity,

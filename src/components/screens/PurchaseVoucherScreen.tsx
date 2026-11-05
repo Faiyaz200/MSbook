@@ -226,26 +226,14 @@ export const PurchaseVoucherScreen: React.FC<PurchaseVoucherScreenProps> = ({
       finalTotalCost = finalQty * unitCost;
     }
 
-    // --- Duplicate Stock Name Check (First 5 letters) ---
-    const cleanName = name.toLowerCase();
-    const prefix5 = cleanName.length >= 5 ? cleanName.substring(0, 5) : cleanName;
-
-    const existingProducts = db.getProducts(activeBusiness.id);
-    const dupInDb = existingProducts.find((p) => {
-      const pClean = p.name.trim().toLowerCase();
-      const pPrefix5 = pClean.length >= 5 ? pClean.substring(0, 5) : pClean;
-      if (pPrefix5 === prefix5) {
-        if (Math.abs((p.sellingPrice || 0) - sRate) < 0.01) {
-          return true;
-        }
-      }
-      return false;
-    });
-
+    // --- Duplicate Check for Current Purchase Voucher List ---
+    // Rule: Two items in the same purchase voucher cannot have identical name AND identical selling rate.
+    // However, items with the same name but DIFFERENT selling rates are allowed ("same name ke alag alag rate ke item le lenge").
+    const cleanName = name.trim().toLowerCase();
     const dupInCurrentItems = items.find((it) => {
       const itClean = it.productName.trim().toLowerCase();
-      const itPrefix5 = itClean.length >= 5 ? itClean.substring(0, 5) : itClean;
-      if (itPrefix5 === prefix5) {
+      if (itClean === cleanName) {
+        // If selling rate is also identical, it's a duplicate entry in this voucher
         if (Math.abs((it.sellingPrice || 0) - sRate) < 0.01) {
           return true;
         }
@@ -253,10 +241,9 @@ export const PurchaseVoucherScreen: React.FC<PurchaseVoucherScreenProps> = ({
       return false;
     });
 
-    if (dupInDb || dupInCurrentItems) {
-      const conflictName = dupInDb ? dupInDb.name : dupInCurrentItems?.productName;
+    if (dupInCurrentItems) {
       setErrorMessage(
-        `Duplicate stock item! '${conflictName}' already exists with the same selling rate of ₹${sRate}. Items with identical names must have different selling rates to be added.`
+        `'${name}' with selling rate of ₹${sRate} is already added in this purchase list. Duplicate item with the same rate cannot be added. Please update its quantity instead.`
       );
       return;
     }
